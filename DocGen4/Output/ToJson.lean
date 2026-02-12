@@ -6,7 +6,46 @@ import Lean.Data.RBMap
 
 namespace DocGen4.Output
 
-open Lean
+open Lean Widget Elab
+
+/-- Extract plain text from a `TaggedText`, stripping all tags. -/
+partial def taggedTextToPlainText : TaggedText α → String
+  | .text s => s
+  | .tag _ t => taggedTextToPlainText t
+  | .append ts => String.join (ts.toList.map taggedTextToPlainText)
+
+/--
+Walk a `CodeWithInfos` tree and produce an array of JSON segments for the search index.
+Each segment is one of:
+- A plain JSON string `"text"` for unlinked text
+- A JSON array `["text", "DeclName"]` for text that links to a known declaration
+- A JSON array `["text", null, true]` for unlinked implicit/instance arg text (rendered italic)
+- A JSON array `["text", "DeclName", true]` for linked implicit/instance arg text (rendered italic)
+
+This mirrors the logic of `infoFormatToHtmlAux` but produces structured data instead of HTML.
+-/
+private partial def codeWithInfosToSegments (i : CodeWithInfos) : HtmlM (Array Json) := do
+  match i with
+  | .text t => return #[Json.str t]
+  | .append ts =>
+    let mut result := #[]
+    for t in ts do
+      result := result ++ (← codeWithInfosToSegments t)
+    return result
+  | .tag a t =>
+    match a.info.val.info with
+    | Info.ofTermInfo ti =>
+      let cleanExpr := ti.expr.consumeMData
+      match cleanExpr with
+      | .const name _ =>
+        if (← getResult).name2ModIdx.contains name then
+          let text := taggedTextToPlainText t
+          return #[toJson #[Json.str text, Json.str name.toString]]
+        else
+          codeWithInfosToSegments t
+      | _ => codeWithInfosToSegments t
+    | _ => codeWithInfosToSegments t
+
 
 structure JsonDeclarationInfo where
   name : String
@@ -20,6 +59,7 @@ structure JsonDeclarationInfo where
 structure JsonDeclaration where
   info : JsonDeclarationInfo
   header : String
+  typeSig : Json := Json.null
 deriving FromJson, ToJson
 
 structure JsonInstance where
@@ -41,6 +81,7 @@ structure JsonHeaderIndex where
 structure JsonIndexedDeclarationInfo where
   kind : String
   docLink : String
+  typeSig : Json := Json.null
   deriving FromJson, ToJson
 
 structure JsonIndexedModule where
@@ -80,6 +121,7 @@ def JsonIndex.addModule (index : JsonIndex) (module : JsonModule) : BaseHtmlM Js
   let newDecls := module.declarations.map (fun d => (d.info.name, {
     kind := d.info.kind,
     docLink := d.info.docLink,
+    typeSig := d.typeSig,
   }))
   index := { index with
     declarations := newDecls ++ index.declarations
@@ -125,8 +167,20 @@ def DocInfo.toJson (sourceLinker : Option DeclarationRange → String) (info : P
   let sourceLink := sourceLinker info.getDeclarationRange
   let line := info.getDeclarationRange.pos.line
   let header := (← docInfoHeader info).toString
+  -- Build structured type signature from all args + return type
+  let mut segments : Array Json := #[]
+  let mut first := true
+  for arg in info.getArgs do
+    if !first then
+      segments := segments.push (Json.str " → ")
+    first := false
+    segments := segments ++ (← codeWithInfosToSegments arg.binder)
+  if !first then
+    segments := segments.push (Json.str " → ")
+  segments := segments ++ (← codeWithInfosToSegments info.getType)
+  let typeSig := Json.arr segments
   let info := { name, kind, doc, docLink, sourceLink, line }
-  return { info, header }
+  return { info, header, typeSig }
 
 def Process.Module.toJson (module : Process.Module) : HtmlM Json := do
     let mut jsonDecls := []

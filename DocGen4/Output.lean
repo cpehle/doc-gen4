@@ -50,7 +50,6 @@ def htmlOutputSetup (config : SiteBaseContext) : IO Unit := do
   let indexHtml := ReaderT.run index config |>.toString
   let notFoundHtml := ReaderT.run notFound config |>.toString
   let foundationalTypesHtml := ReaderT.run foundationalTypes config |>.toString
-  let navbarHtml := ReaderT.run navbar config |>.toString
   let searchHtml := ReaderT.run search config |>.toString
   let referencesHtml := ReaderT.run (references (← collectBackrefs config.buildDir)) config |>.toString
   let tacticsHtml := ReaderT.run (tactics (← loadTacticsJSON config.buildDir)) config |>.toString
@@ -61,7 +60,6 @@ def htmlOutputSetup (config : SiteBaseContext) : IO Unit := do
     ("color-scheme.js", colorSchemeJs),
     ("nav.js", navJs),
     ("jump-src.js", jumpSrcJs),
-    ("expand-nav.js", expandNavJs),
     ("how-about.js", howAboutJs),
     ("search.html", searchHtml),
     ("search.js", searchJs),
@@ -71,12 +69,16 @@ def htmlOutputSetup (config : SiteBaseContext) : IO Unit := do
     ("index.html", indexHtml),
     ("foundational_types.html", foundationalTypesHtml),
     ("404.html", notFoundHtml),
-    ("navbar.html", navbarHtml),
     ("references.html", referencesHtml),
     ("tactics.html", tacticsHtml),
   ]
   for (fileName, content) in docGenStatic do
     FS.writeFile (basePath config.buildDir / fileName) content
+
+  -- Copy bundled Berkeley Mono font file into the output root.
+  let berkeleyMonoFile : System.FilePath := ("static" : System.FilePath) / "BerkeleyMonoVariable.woff2"
+  let berkeleyMonoData ← FS.readBinFile berkeleyMonoFile
+  FS.writeBinFile (basePath config.buildDir / "BerkeleyMonoVariable.woff2") berkeleyMonoData
 
   let findHtml := ReaderT.run find { config with depthToRoot := 1 } |>.toString
   let findStatic := #[
@@ -153,8 +155,60 @@ def getSimpleBaseContext (buildDir : System.FilePath) (hierarchy : Hierarchy) :
         refs := refs
       }
 
+/-- Recursively collect all HTML files under a directory. -/
+partial def collectHtmlFiles (dir : System.FilePath) : IO (Array System.FilePath) := do
+  let mut files := #[]
+  for entry in ← System.FilePath.readDir dir do
+    if ← entry.path.isDir then
+      files := files ++ (← collectHtmlFiles entry.path)
+    else if entry.path.extension = some "html" then
+      files := files.push entry.path
+  return files
+
+/-- Compute module name from relative path components like `["DocGen4", "Output", "Base.html"]`.
+    Returns `none` for non-module pages (e.g. `index.html`, `404.html`). -/
+def moduleNameOfRelPath (relComponents : List String) : Option Name :=
+  match relComponents.getLast? with
+  | none => none
+  | some fileName =>
+    match fileName.splitOn "." with
+    | [baseName, "html"] =>
+      if !baseName.isEmpty && baseName.front.isUpper then
+        let modParts := relComponents.dropLast ++ [baseName]
+        some (modParts.foldl (fun acc part => Name.mkStr acc part) Name.anonymous)
+      else
+        none
+    | _ => none
+
+/-- Fill in the deferred nav placeholder in all HTML files with the complete navigation. -/
+def patchNavInAllFiles (config : SiteBaseContext) : IO Unit := do
+  let docDir := basePath config.buildDir
+  let docPrefix :=
+    let s := docDir.toString
+    if s.endsWith "/" then s else s ++ "/"
+  let htmlFiles ← collectHtmlFiles docDir
+  let startMarker := "<!-- NAV_START -->"
+  let endMarker := "<!-- NAV_END -->"
+  for filePath in htmlFiles do
+    let content ← FS.readFile filePath
+    let startParts := content.splitOn startMarker
+    if startParts.length != 2 then continue
+    let endParts := startParts[1]!.splitOn endMarker
+    if endParts.length != 2 then continue
+    -- Compute depth and currentName from relative path
+    let relStr := (filePath.toString.drop docPrefix.length).toString
+    let relComponents := relStr.splitOn "/"
+    let depth := relComponents.length - 1
+    let currentName := moduleNameOfRelPath relComponents
+    -- Generate complete nav with correct context
+    let navConfig := { config with depthToRoot := depth, currentName := currentName }
+    let navHtml := ReaderT.run navContent navConfig |>.toString
+    let patched := startParts[0]! ++ navHtml ++ endParts[1]!
+    FS.writeFile filePath patched
+
 def htmlOutputIndex (baseConfig : SiteBaseContext) : IO Unit := do
   htmlOutputSetup baseConfig
+  patchNavInAllFiles baseConfig
 
   let mut index : JsonIndex := {}
   for entry in ← System.FilePath.readDir (declarationsBasePath baseConfig.buildDir) do

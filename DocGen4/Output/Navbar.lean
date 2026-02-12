@@ -52,16 +52,10 @@ def moduleList : BaseHtmlM Html := do
   return <div class="module_list">[list]</div>
 
 /--
-The main entry point to rendering the navbar on the left hand side.
+Return the inner navigation content (static page links, module tree, settings)
+without any HTML/head/body wrapper. Intended to be inlined directly into the page.
 -/
-def navbar : BaseHtmlM Html := do
-  /-
-  TODO: Add these in later
-  <div class="nav_link"><a href={s!"{← getRoot}commands.html"}>commands</a></div>
-  <div class="nav_link"><a href={s!"{← getRoot}hole_commands.html"}>hole commands</a></div>
-  <div class="nav_link"><a href={s!"{← getRoot}attributes.html"}>attributes</a></div>
-  <div class="nav_link"><a href={s!"{← getRoot}notes.html"}>notes</a></div>
-  -/
+def navContent : BaseHtmlM Html := do
   let mut staticPages : Array Html := #[
     <div class="nav_link"><a href={s!"{← getRoot}"}>index</a></div>,
     <div class="nav_link"><a href={s!"{← getRoot}foundational_types.html"}>foundational types</a></div>,
@@ -71,38 +65,24 @@ def navbar : BaseHtmlM Html := do
   if not config.refs.isEmpty then
     staticPages := staticPages.push <div class="nav_link"><a href={s!"{← getRoot}references.html"}>references</a></div>
   pure
-    <html lang="en">
-      <head>
-        [← baseHtmlHeadDeclarations]
-
-        <script type="module" src={s!"{← getRoot}nav.js"}></script>
-        <script type="module" src={s!"{← getRoot}color-scheme.js"}></script>
-        <base target="_parent" />
-      </head>
-
-      <body>
-        <div class="navframe">
-        <nav class="nav">
-          <h3>General documentation</h3>
-          [staticPages]
-          <h3>Library</h3>
-          {← moduleList}
-          <div id="settings" hidden="hidden">
-            -- `input` is a void tag, but can be self-closed to make parsing easier.
-            <h3>Color scheme</h3>
-            <form id="color-theme-switcher">
-                <label for="color-theme-dark">
-                    <input type="radio" name="color_theme" id="color-theme-dark" value="dark" autocomplete="off"/>dark</label>
-                <label for="color-theme-system" title="Match system theme settings">
-                    <input type="radio" name="color_theme" id="color-theme-system" value="system" autocomplete="off"/>system</label>
-                <label for="color-theme-light">
-                    <input type="radio" name="color_theme" id="color-theme-light" value="light" autocomplete="off"/>light</label>
-            </form>
-          </div>
-        </nav>
-        </div>
-      </body>
-    </html>
+    <nav class="nav">
+      <h3>General documentation</h3>
+      [staticPages]
+      <h3>Library</h3>
+      {← moduleList}
+      <div id="settings">
+        -- `input` is a void tag, but can be self-closed to make parsing easier.
+        <h3>Color scheme</h3>
+        <form id="color-theme-switcher">
+            <label for="color-theme-dark">
+                <input type="radio" name="color_theme" id="color-theme-dark" value="dark" autocomplete="off"/>dark</label>
+            <label for="color-theme-system" title="Match system theme settings">
+                <input type="radio" name="color_theme" id="color-theme-system" value="system" autocomplete="off"/>system</label>
+            <label for="color-theme-light">
+                <input type="radio" name="color_theme" id="color-theme-light" value="light" autocomplete="off"/>light</label>
+        </form>
+      </div>
+    </nav>
 
 end Output
 end DocGen4

@@ -290,12 +290,12 @@ library_facet docs (lib) : Array FilePath := do
   let dataFile := basePath / "declarations" / "declaration-data.bmp"
   let staticFiles := #[
     basePath / "style.css",
+    basePath / "BerkeleyMonoVariable.woff2",
     basePath / "favicon.svg",
     basePath / "declaration-data.js",
     basePath / "color-scheme.js",
     basePath / "nav.js",
     basePath / "jump-src.js",
-    basePath / "expand-nav.js",
     basePath / "how-about.js",
     basePath / "search.js",
     basePath / "mathjax-config.js",
@@ -303,7 +303,6 @@ library_facet docs (lib) : Array FilePath := do
     basePath / "importedBy.js",
     basePath / "index.html",
     basePath / "404.html",
-    basePath / "navbar.html",
     basePath / "search.html",
     basePath / "foundational_types.html",
     basePath / "references.html",

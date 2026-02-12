@@ -176,6 +176,7 @@ function getMatches(declarations, pattern, allowedKinds = undefined, maxResults 
   for (const [name, {
     kind,
     docLink,
+    typeSig,
   }] of Object.entries(declarations)) {
     // Apply "kind" filter
     if (allowedKinds !== undefined) {
@@ -192,6 +193,7 @@ function getMatches(declarations, pattern, allowedKinds = undefined, maxResults 
         err,
         lowerName,
         docLink,
+        typeSig,
       });
     }
   }

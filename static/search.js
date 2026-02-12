@@ -84,6 +84,48 @@ function removeAllChildren(node) {
   }
 }
 
+/**
+ * Filter search results to a single kind by updating the checkboxes and re-triggering the search.
+ * Clicking the same kind again resets all checkboxes to checked.
+ */
+function filterToKind(kind) {
+  const checkboxes = document.querySelectorAll(".kind_checkbox");
+  const alreadySolo = Array.from(checkboxes).every(cb => cb.value === kind ? cb.checked : !cb.checked);
+  checkboxes.forEach(cb => { cb.checked = alreadySolo || cb.value === kind; });
+  if (SEARCH_PAGE_INPUT) SEARCH_PAGE_INPUT.dispatchEvent(new Event("input"));
+}
+
+/**
+ * Render a structured type signature as a DocumentFragment.
+ * `typeSig` is a JSON array of segments, each either:
+ *   - a string for plain text
+ *   - ["text", "DeclName"] for text that links to a declaration
+ */
+function renderTypeSig(typeSig, declarations) {
+  const frag = document.createDocumentFragment();
+  if (!Array.isArray(typeSig)) {
+    frag.appendChild(document.createTextNode(String(typeSig)));
+    return frag;
+  }
+  for (const seg of typeSig) {
+    if (typeof seg === "string") {
+      frag.appendChild(document.createTextNode(seg));
+    } else if (Array.isArray(seg) && seg.length >= 2 && seg[1] != null) {
+      const a = document.createElement("a");
+      const decl = declarations[seg[1]];
+      if (decl) {
+        a.href = SITE_ROOT + decl.docLink;
+      }
+      a.textContent = seg[0];
+      a.classList.add("result_type_link");
+      frag.appendChild(a);
+    } else if (Array.isArray(seg) && seg.length >= 1) {
+      frag.appendChild(document.createTextNode(seg[0]));
+    }
+  }
+  return frag;
+}
+
 // counts how often `handleSearch` has already been called. Used to terminate the previous call whenever a new one has started.
 var handleSearchCounter = 0;
 
@@ -138,10 +180,37 @@ async function handleSearch(dataCenter, err, ev, sr, maxResults, autocomplete) {
         row.classList.add("search_result");
         const linkdiv = row.appendChild(document.createElement("div"))
         linkdiv.classList.add("result_link");
+        // Kind badge (outside the <a> so it can be clicked independently on the search page)
+        const kindSpan = linkdiv.appendChild(document.createElement("span"));
+        kindSpan.classList.add("result_kind");
+        kindSpan.textContent = result[j].kind;
+        kindSpan.dataset.kind = result[j].kind;
+        // On the search page, clicking a kind badge filters to that kind
+        if (SEARCH_PAGE_INPUT) {
+          kindSpan.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            filterToKind(ev.target.dataset.kind);
+          });
+        }
         const link = linkdiv.appendChild(document.createElement("a"));
-        link.innerText = result[j].name;
-        link.title = result[j].name;
         link.href = SITE_ROOT + result[j].docLink;
+        // Declaration name
+        const nameSpan = link.appendChild(document.createElement("span"));
+        nameSpan.classList.add("result_name");
+        nameSpan.textContent = result[j].name;
+        link.title = result[j].name;
+        // Type signature (with linked types on the search page)
+        if (result[j].typeSig) {
+          const sigSpan = linkdiv.appendChild(document.createElement("span"));
+          sigSpan.classList.add("result_type");
+          sigSpan.appendChild(document.createTextNode(" : "));
+          if (!autocomplete) {
+            sigSpan.appendChild(renderTypeSig(result[j].typeSig, dataCenter.declarationData.declarations));
+          } else {
+            sigSpan.appendChild(renderTypeSig(result[j].typeSig, {}));
+          }
+        }
       }
       sr.appendChild(block);
       // wait a moment before adding the next block, and only do so if this method hasn't been called since.

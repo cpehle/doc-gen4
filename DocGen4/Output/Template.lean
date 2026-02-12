@@ -26,6 +26,7 @@ def baseHtmlGenerator (title : String) (site : Array Html) : BaseHtmlM Html := d
         [← baseHtmlHeadDeclarations]
 
         <title>{title}</title>
+        <script>{.raw "(function(){try{var t=localStorage.getItem('theme')||'system';if(t==='system')t=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t)}catch(e){}})()"}</script>
         <script defer="true" src={s!"{← getRoot}mathjax-config.js"}></script>
         <script defer="true" src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
         <script defer="true" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -34,10 +35,11 @@ def baseHtmlGenerator (title : String) (site : Array Html) : BaseHtmlM Html := d
         [moduleConstant]
         <script type="module" src={s!"{← getRoot}jump-src.js"}></script>
         <script type="module" src={s!"{← getRoot}search.js"}></script>
-        <script type="module" src={s!"{← getRoot}expand-nav.js"}></script>
         <script type="module" src={s!"{← getRoot}how-about.js"}></script>
         <script type="module" src={s!"{← getRoot}instances.js"}></script>
         <script type="module" src={s!"{← getRoot}importedBy.js"}></script>
+        <script type="module" src={s!"{← getRoot}nav.js"}></script>
+        <script type="module" src={s!"{← getRoot}color-scheme.js"}></script>
       </head>
 
       <body>
@@ -55,9 +57,7 @@ def baseHtmlGenerator (title : String) (site : Array Html) : BaseHtmlM Html := d
 
         [site]
 
-        <nav class="nav">
-          <iframe src={s!"{← getRoot}navbar.html"} class="navframe" frameBorder="0"></iframe>
-        </nav>
+        {.raw "<!-- NAV_START --><nav class=\"nav\"></nav><!-- NAV_END -->"}
       </body>
     </html>
 

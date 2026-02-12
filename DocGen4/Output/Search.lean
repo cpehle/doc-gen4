@@ -14,11 +14,9 @@ open scoped DocGen4.Jsx
 def search : BaseHtmlM Html := do templateExtends (baseHtml "Search") <| do
   pure
     <main>
-      <h1> Search Results </h1>
-      <label for="search_page_query">Query:</label>
-      <input id="search_page_query" />
+      <input id="search_page_query" placeholder="Search declarations..." />
       <div id="kinds">
-        Allowed Kinds:
+        <span>Filter:</span>
         <input type="checkbox" id="def_checkbox" class="kind_checkbox" value="def" checked="checked" />
         <label for="def_checkbox">def</label>
         <input type="checkbox" id="theorem_checkbox" class="kind_checkbox" value="theorem" checked="checked" />
@@ -31,7 +29,7 @@ def search : BaseHtmlM Html := do templateExtends (baseHtml "Search") <| do
         <label for="class_checkbox">class</label>
         <input type="checkbox" id="instance_checkbox" class="kind_checkbox" value="instance" checked="checked" />
         <label for="instance_checkbox">instance</label>
-        <input type="checkbox" id="axiom_checkbox" class="axiom_checkbox" value="axiom" checked="checked" />
+        <input type="checkbox" id="axiom_checkbox" class="kind_checkbox" value="axiom" checked="checked" />
         <label for="axiom_checkbox">axiom</label>
         <input type="checkbox" id="opaque_checkbox" class="kind_checkbox" value="opaque" checked="checked" />
         <label for="opaque_checkbox">opaque</label>

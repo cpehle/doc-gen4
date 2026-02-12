@@ -55,9 +55,46 @@ def docInfoHeader (doc : DocInfo) : HtmlM Html := do
   | DocInfo.classInfo i => nodes := nodes.append (← structureInfoHeader i)
   | _ => nodes := nodes
 
-  nodes := nodes.push <| Html.element "span" true #[("class", "decl_args")] #[" :"]
-  nodes := nodes.push <div class="decl_type">[← infoFormatToHtml doc.getType]</div>
+  nodes := nodes.push <| Html.element "span" true #[("class", "decl_args")] #[" : "]
+  nodes := nodes.push <span class="decl_type">[← infoFormatToHtml doc.getType]</span>
   return <div class="decl_header"> [nodes] </div>
+
+/--
+Render one token inside an attribute payload. If it looks like a fully-qualified
+declaration name known to doc-gen, link it.
+-/
+private def attrTokenToHtml (tok : String) : HtmlM Html := do
+  if tok.contains "." then
+    let name := String.toName tok
+    if (← getResult).name2ModIdx.contains name then
+      return <a href={← declNameToLink name}>{tok}</a>
+  return tok
+
+/--
+Render a raw attribute payload (e.g. `deprecated Foo.bar (since := "v1")`) with
+linkification for declaration names.
+-/
+private def attrPayloadToHtml (attr : String) : HtmlM (Array Html) := do
+  let parts := attr.splitOn " " |>.toArray
+  let mut nodes : Array Html := #[]
+  for part in parts, i in [0:parts.size] do
+    if i > 0 then
+      nodes := nodes.push " "
+    nodes := nodes.push (← attrTokenToHtml part)
+  return nodes
+
+/--
+Render `@[attr1, attr2, ...]` as HTML, preserving punctuation while allowing
+linkification inside each attribute payload.
+-/
+private def attrsToHtml (attrs : Array String) : HtmlM Html := do
+  let mut nodes : Array Html := #["@["]
+  for attr in attrs, i in [0:attrs.size] do
+    if i > 0 then
+      nodes := nodes.push ", "
+    nodes := nodes ++ (← attrPayloadToHtml attr)
+  nodes := nodes.push "]"
+  return Html.element "div" false #[("class", "attributes")] nodes
 
 /--
 The main entry point for rendering a single declaration inside a given module.
@@ -84,12 +121,11 @@ def docInfoToHtml (module : Name) (doc : DocInfo) : HtmlM Html := do
   | DocInfo.structureInfo i => pure #[← instancesForToHtml i.name]
   | _ => pure #[]
   let attrs := doc.getAttrs
-  let attrsHtml :=
+  let attrsHtml ←
     if attrs.size > 0 then
-      let attrStr := "@[" ++ String.intercalate ", " doc.getAttrs.toList ++ "]"
-      #[Html.element "div" false #[("class", "attributes")] #[attrStr]]
+      pure #[← attrsToHtml attrs]
     else
-      #[]
+      pure #[]
   -- custom decoration (e.g., verification badges from external tools)
   let decorator ← getDeclarationDecorator
   let decoratorHtml := decorator module doc.getName doc.getKind
