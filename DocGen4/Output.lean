@@ -75,10 +75,18 @@ def htmlOutputSetup (config : SiteBaseContext) : IO Unit := do
   for (fileName, content) in docGenStatic do
     FS.writeFile (basePath config.buildDir / fileName) content
 
-  -- Copy bundled Berkeley Mono font file into the output root.
-  let berkeleyMonoFile : System.FilePath := ("static" : System.FilePath) / "BerkeleyMonoVariable.woff2"
-  let berkeleyMonoData ← FS.readBinFile berkeleyMonoFile
-  FS.writeBinFile (basePath config.buildDir / "BerkeleyMonoVariable.woff2") berkeleyMonoData
+  -- Copy bundled font files into the output root.
+  let fontFiles := #[
+    "BerkeleyMonoVariable.woff2",
+    "IBMPlexMono-Regular.woff2",
+    "IBMPlexMono-Bold.woff2",
+    "IBMPlexMono-Italic.woff2",
+    "IBMPlexMono-BoldItalic.woff2"
+  ]
+  for fontFile in fontFiles do
+    let srcFile : System.FilePath := ("static" : System.FilePath) / fontFile
+    let fontData ← FS.readBinFile srcFile
+    FS.writeBinFile (basePath config.buildDir / fontFile) fontData
 
   let findHtml := ReaderT.run find { config with depthToRoot := 1 } |>.toString
   let findStatic := #[

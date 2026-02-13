@@ -291,6 +291,10 @@ library_facet docs (lib) : Array FilePath := do
   let staticFiles := #[
     basePath / "style.css",
     basePath / "BerkeleyMonoVariable.woff2",
+    basePath / "IBMPlexMono-Regular.woff2",
+    basePath / "IBMPlexMono-Bold.woff2",
+    basePath / "IBMPlexMono-Italic.woff2",
+    basePath / "IBMPlexMono-BoldItalic.woff2",
     basePath / "favicon.svg",
     basePath / "declaration-data.js",
     basePath / "color-scheme.js",
