@@ -85,8 +85,9 @@ def htmlOutputSetup (config : SiteBaseContext) : IO Unit := do
   ]
   for fontFile in fontFiles do
     let srcFile : System.FilePath := ("static" : System.FilePath) / fontFile
-    let fontData ← FS.readBinFile srcFile
-    FS.writeBinFile (basePath config.buildDir / fontFile) fontData
+    if ← srcFile.pathExists then
+      let fontData ← FS.readBinFile srcFile
+      FS.writeBinFile (basePath config.buildDir / fontFile) fontData
 
   let findHtml := ReaderT.run find { config with depthToRoot := 1 } |>.toString
   let findStatic := #[

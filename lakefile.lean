@@ -290,7 +290,6 @@ library_facet docs (lib) : Array FilePath := do
   let dataFile := basePath / "declarations" / "declaration-data.bmp"
   let staticFiles := #[
     basePath / "style.css",
-    basePath / "BerkeleyMonoVariable.woff2",
     basePath / "IBMPlexMono-Regular.woff2",
     basePath / "IBMPlexMono-Bold.woff2",
     basePath / "IBMPlexMono-Italic.woff2",
