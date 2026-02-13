@@ -37,7 +37,14 @@ for (const elem of document.getElementsByClassName("nav_sect")) {
   });
 }
 
-// Scroll to center.
+// Scroll the nav sidebar so the current page link is visible,
+// without disturbing the main document's scroll position.
 for (const currentFileLink of document.getElementsByClassName("visible")) {
-  currentFileLink.scrollIntoView({ block: "center" });
+  const nav = currentFileLink.closest("nav");
+  if (nav) {
+    const navRect = nav.getBoundingClientRect();
+    const linkRect = currentFileLink.getBoundingClientRect();
+    const offset = linkRect.top - navRect.top - navRect.height / 2;
+    nav.scrollTop += offset;
+  }
 }
