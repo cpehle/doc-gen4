@@ -63,7 +63,7 @@ def htmlOutputSetup (config : SiteBaseContext) : IO Unit := do
     ("how-about.js", howAboutJs),
     ("search.html", searchHtml),
     ("search.js", searchJs),
-    ("mathjax-config.js", mathjaxConfigJs),
+    ("katex-config.js", katexConfigJs),
     ("instances.js", instancesJs),
     ("importedBy.js", importedByJs),
     ("index.html", indexHtml),

@@ -298,7 +298,7 @@ library_facet docs (lib) : Array FilePath := do
     basePath / "jump-src.js",
     basePath / "how-about.js",
     basePath / "search.js",
-    basePath / "mathjax-config.js",
+    basePath / "katex-config.js",
     basePath / "instances.js",
     basePath / "importedBy.js",
     basePath / "index.html",

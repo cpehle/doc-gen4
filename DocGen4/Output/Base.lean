@@ -208,7 +208,7 @@ section Static
 The following section contains all the statically included files that
 are used in documentation generation, notably JS and CSS ones.
 -/
-  -- Touch this module when embedded static/style.css changes (impl_arg no italic, structured typeSig).
+  -- Touch this module when embedded static/style.css changes (fragment-offset bump).
   def styleCss : String := include_str "../../static/style.css"
   def faviconSvg : String := include_str "../../static/favicon.svg"
   def declarationDataCenterJs : String := include_str "../../static/declaration-data.js"
@@ -221,7 +221,7 @@ are used in documentation generation, notably JS and CSS ones.
   def instancesJs : String := include_str "../../static/instances.js"
   def importedByJs : String := include_str "../../static/importedBy.js"
   def findJs : String := include_str "../../static/find/find.js"
-  def mathjaxConfigJs : String := include_str "../../static/mathjax-config.js"
+  def katexConfigJs : String := include_str "../../static/katex-config.js"
 
 end Static
 

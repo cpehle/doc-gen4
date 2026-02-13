@@ -1,17 +1,14 @@
 /*
- * This file is for configing MathJax behavior.
- * See https://docs.mathjax.org/en/latest/web/configuration.html
- * 
- * This configuration is copied from old doc-gen3
- * https://github.com/leanprover-community/doc-gen
+ * KaTeX auto-render configuration.
+ * Replaces the previous MathJax setup with identical delimiter behaviour.
  */
-MathJax = {
-  tex: {
-    inlineMath: [["$", "$"]],
-    displayMath: [["$$", "$$"]],
-  },
-  options: {
-    skipHtmlTags: [
+document.addEventListener("DOMContentLoaded", function () {
+  renderMathInElement(document.body, {
+    delimiters: [
+      { left: "$$", right: "$$", display: true },
+      { left: "$", right: "$", display: false },
+    ],
+    ignoredTags: [
       "script",
       "noscript",
       "style",
@@ -35,7 +32,7 @@ MathJax = {
       "constructors",
       "instances",
     ],
-    ignoreHtmlClass: "tex2jax_ignore",
-    processHtmlClass: "tex2jax_process",
-  },
-};
+    ignoredClasses: ["tex2jax_ignore"],
+    throwOnError: false,
+  });
+});
