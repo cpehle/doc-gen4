@@ -43,6 +43,18 @@ structure BackrefItem where
   deriving FromJson, ToJson, Inhabited
 
 /--
+One entry in the optional mdBook-style sidebar.
+-/
+structure BookNavEntry where
+  /-- Display title from `SUMMARY.md`. -/
+  title : String
+  /-- Link target relative to the doc root, e.g. `book/intro.html`. -/
+  href : String
+  /-- Nesting level inferred from indentation in `SUMMARY.md`. -/
+  level : Nat
+  deriving FromJson, ToJson, Inhabited
+
+/--
 The context used in the `BaseHtmlM` monad for HTML templating.
 -/
 structure SiteBaseContext where
@@ -69,6 +81,22 @@ structure SiteBaseContext where
   The list of references, as an array.
   -/
   refs : Array BibItem
+  /--
+  Optional mdBook-style navigation entries.
+  -/
+  bookNav : Array BookNavEntry := #[]
+  /--
+  Section label for mdBook-style navigation.
+  -/
+  bookNavLabel : String := "Book"
+  /--
+  Current page path relative to the generated doc root.
+  -/
+  currentPage : Option String := none
+  /--
+  Whether markdown links should stay relative to the current page.
+  -/
+  preserveRelativeLinks : Bool := false
 
 /--
 Declaration decorator function type: given a module name, declaration name, and declaration kind,
@@ -167,6 +195,8 @@ def getRoot : BaseHtmlM String := do
 
 def getHierarchy : BaseHtmlM Hierarchy := do return (← read).hierarchy
 def getCurrentName : BaseHtmlM (Option Name) := do return (← read).currentName
+def getCurrentPage : BaseHtmlM (Option String) := do return (← read).currentPage
+def getPreserveRelativeLinks : BaseHtmlM Bool := do return (← read).preserveRelativeLinks
 def getResult : HtmlM AnalyzerResult := do return (← read).result
 def getSourceUrl (module : Name) (range : Option DeclarationRange): HtmlM String := do return (← read).sourceLinker module range
 def getDeclarationDecorator : HtmlM DeclarationDecoratorFn := do return (← read).declarationDecorator
@@ -202,6 +232,26 @@ def moduleNameToFile (n : Name) : FilePath :=
     FilePath.addExtension (parts.foldl (· / ⟨·⟩) base) "html"
   else
     panic!"anonymous module name is illegal"
+
+/--
+Turns a Github git remote URL into an HTTPS Github URL.
+Three link types from git supported:
+- https://github.com/org/repo
+- https://github.com/org/repo.git
+- git@github.com:org/repo.git
+-/
+def getGithubBaseUrl (url : String) : Option String :=
+  if url.startsWith "git@github.com:" && url.endsWith ".git" then
+    let url := url.drop "git@github.com:".length
+    let url := url.dropEnd ".git".length
+    .some s!"https://github.com/{url}"
+  else if url.startsWith "https://github.com/" then
+    if url.endsWith ".git" then
+      .some <| url.dropEnd ".git".length |>.copy
+    else
+      .some url
+  else
+    .none
 
 section Static
 /-!

@@ -46,15 +46,23 @@ def getGitSubDirectory (directory : System.FilePath := "." ) : IO System.FilePat
 Obtain the Github URL of a project by parsing the origin remote.
 -/
 def getGitRemoteUrl (directory : System.FilePath := "." ) (remote : String := "origin") : IO String := do
+  let remoteOverride := (← IO.getEnv "DOCGEN_REMOTE").getD remote
   let out ← IO.Process.output {
     cmd := "git",
-    args := #["remote", "get-url", remote],
+    args := #["remote", "get-url", remoteOverride],
     cwd := directory
   }
   if out.exitCode != 0 then
-    let explanation := "Failed to find a git remote in your project, consider reading: https://github.com/leanprover/doc-gen4#source-locations"
-    let err := s!"git exited with code {out.exitCode} while looking for the git remote in {directory}"
-    throw <| IO.userError <| explanation ++ "\n" ++ err
+    let out ← IO.Process.output {
+      cmd := "git",
+      args := #["remote", "get-url", remote],
+      cwd := directory
+    }
+    if out.exitCode != 0 then
+      let explanation := "Failed to find a git remote in your project, consider reading: https://github.com/leanprover/doc-gen4#source-locations"
+      let err := s!"git exited with code {out.exitCode} while looking for the git remote in {directory}"
+      throw <| IO.userError <| explanation ++ "\n" ++ err
+    return out.stdout.trimAsciiEnd.copy
   return out.stdout.trimAsciiEnd.copy
 
 /--
@@ -71,6 +79,16 @@ def getProjectCommit (directory : System.FilePath := "." ) : IO String := do
   return out.stdout.trimAsciiEnd.copy
 
 def filteredPath (path : FilePath) : List String := path.components.filter (· != ".")
+
+/-- Recursively collect all files under `dir`. -/
+partial def collectFilesRec (dir : FilePath) : IO (Array FilePath) := do
+  let mut files := #[]
+  for entry in ← System.FilePath.readDir dir do
+    if ← entry.path.isDir then
+      files := files ++ (← collectFilesRec entry.path)
+    else
+      files := files.push entry.path
+  return files
 
 /--
 Turns a Github git remote URL into an HTTPS Github URL.
@@ -115,7 +133,7 @@ package_facet srcUri.github (pkg) : String := Job.async do
         s!"Could not interpret Git remote uri {url} as a Github source repo.\n"
           ++ "See README on source URIs for more details."
   let commit ← getProjectCommit pkg.dir
-  logInfo s!"Found git remote for {pkg.baseName} at {baseUrl} @ {commit}"
+  logInfo s!"Found git remote for {pkg.prettyName} at {baseUrl} @ {commit}"
   let subdir ← getGitSubDirectory pkg.dir
   return "/".intercalate <| baseUrl :: "blob" :: commit :: filteredPath (subdir / pkg.config.srcDir)
 
@@ -286,6 +304,8 @@ library_facet docs (lib) : Array FilePath := do
   let bibPrepassJob ← bibPrepass.fetch
   -- Shared with DocGen4.Output
   let buildDir := (← getRootPackage).buildDir
+  let rootPkg := (← getRootPackage)
+  let bookDir := rootPkg.srcDir / "docs"
   let basePath := buildDir / "doc"
   let dataFile := basePath / "declarations" / "declaration-data.bmp"
   let staticFiles := #[
@@ -320,13 +340,31 @@ library_facet docs (lib) : Array FilePath := do
         moduleJobs.mapM fun modDeps => do
           buildFileUnlessUpToDate' dataFile do
             logInfo "Documentation indexing"
+            let ws ← getWorkspace
+            let docGenPkg := ws.packages.find? fun pkg =>
+              pkg.prettyName == "«doc-gen4»" || pkg.prettyName == "doc-gen4" || pkg.dir.fileName == some "doc-gen4"
+            let staticDir := match docGenPkg with
+              | some pkg => pkg.dir / "static"
+              | none => lib.pkg.dir / "static"
             proc {
               cmd := exeFile.toString
-              args := #["index", "--build", buildDir.toString]
+              args := #[
+                "index",
+                "--build", buildDir.toString,
+                "--static", staticDir.toString,
+                "--book", bookDir.toString
+              ]
             }
-          let traces ← staticFiles.mapM computeTrace
+          let bookSourceFiles ←
+            if ← bookDir.pathExists then
+              collectFilesRec bookDir
+            else
+              pure #[]
+          let traces ← (staticFiles ++ bookSourceFiles).mapM computeTrace
           addTrace <| mixTraceArray traces
-          return (DepSet.mk (#[dataFile] ++ staticFiles) (modDeps.push (.mk coreDeps #[]))).toArray
+          let generatedFiles ← collectFilesRec basePath
+          let direct := generatedFiles.push dataFile
+          return (DepSet.mk direct (modDeps.push (.mk coreDeps #[]))).toArray
 
 library_facet docsHeader (lib) : FilePath := do
   let mods ← (← lib.modules.fetch).await

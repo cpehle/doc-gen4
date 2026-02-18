@@ -17,6 +17,7 @@ import DocGen4.Output.Search
 import DocGen4.Output.Tactics
 import DocGen4.Output.ToJson
 import DocGen4.Output.FoundationalTypes
+import DocGen4.Output.Book
 
 namespace DocGen4
 
@@ -37,7 +38,7 @@ def collectBackrefs (buildDir : System.FilePath) : IO (Array BackrefItem) := do
         | .ok (arr : Array BackrefItem) => backrefs := backrefs ++ arr
   return backrefs
 
-def htmlOutputSetup (config : SiteBaseContext) : IO Unit := do
+def htmlOutputSetup (config : SiteBaseContext) (staticDir : Option System.FilePath := none) : IO Unit := do
   let findBasePath (buildDir : System.FilePath) := basePath buildDir / "find"
 
   -- Base structure
@@ -83,8 +84,9 @@ def htmlOutputSetup (config : SiteBaseContext) : IO Unit := do
     "IBMPlexMono-Italic.woff2",
     "IBMPlexMono-BoldItalic.woff2"
   ]
+  let staticPath := staticDir.getD "static"
   for fontFile in fontFiles do
-    let srcFile : System.FilePath := ("static" : System.FilePath) / fontFile
+    let srcFile : System.FilePath := staticPath / fontFile
     if ← srcFile.pathExists then
       let fontData ← FS.readBinFile srcFile
       FS.writeBinFile (basePath config.buildDir / fontFile) fontData
@@ -205,18 +207,25 @@ def patchNavInAllFiles (config : SiteBaseContext) : IO Unit := do
     let endParts := startParts[1]!.splitOn endMarker
     if endParts.length != 2 then continue
     -- Compute depth and currentName from relative path
-    let relStr := (filePath.toString.drop docPrefix.length).toString
+    let relStr := (filePath.toString.drop docPrefix.length).toString |>.replace "\\" "/"
     let relComponents := relStr.splitOn "/"
     let depth := relComponents.length - 1
     let currentName := moduleNameOfRelPath relComponents
     -- Generate complete nav with correct context
-    let navConfig := { config with depthToRoot := depth, currentName := currentName }
+    let navConfig := {
+      config with
+      depthToRoot := depth
+      currentName := currentName
+      currentPage := some relStr
+    }
     let navHtml := ReaderT.run navContent navConfig |>.toString
     let patched := startParts[0]! ++ navHtml ++ endParts[1]!
     FS.writeFile filePath patched
 
-def htmlOutputIndex (baseConfig : SiteBaseContext) : IO Unit := do
-  htmlOutputSetup baseConfig
+def htmlOutputIndex (baseConfig : SiteBaseContext) (staticDir : Option System.FilePath := none)
+    (bookDir : Option System.FilePath := none) : IO Unit := do
+  htmlOutputSetup baseConfig staticDir
+  let baseConfig ← htmlOutputBook baseConfig bookDir
   patchNavInAllFiles baseConfig
 
   let mut index : JsonIndex := {}
@@ -259,9 +268,11 @@ The main entrypoint for outputting the documentation HTML based on an
 -/
 def htmlOutput (buildDir : System.FilePath) (result : AnalyzerResult) (hierarchy : Hierarchy)
     (sourceUrl? : Option String) (sourceLinker? : Option SourceLinkerFn := none)
-    (declarationDecorator? : Option DeclarationDecoratorFn := none) : IO Unit := do
+    (declarationDecorator? : Option DeclarationDecoratorFn := none)
+    (staticDir : Option System.FilePath := none)
+    (bookDir : Option System.FilePath := none) : IO Unit := do
   let baseConfig ← getSimpleBaseContext buildDir hierarchy
   discard <| htmlOutputResults baseConfig result sourceUrl? sourceLinker? declarationDecorator?
-  htmlOutputIndex baseConfig
+  htmlOutputIndex baseConfig staticDir bookDir
 
 end DocGen4

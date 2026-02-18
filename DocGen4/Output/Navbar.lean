@@ -18,6 +18,14 @@ def moduleListFile (file : Name) : BaseHtmlM Html := do
     <a href={← moduleNameToLink file}>{file.getString!}</a>
   </div>
 
+def bookNavLink (entry : BookNavEntry) : BaseHtmlM Html := do
+  let isCurrent := (← getCurrentPage) == some entry.href
+  let className := if isCurrent then "nav_link visible book_nav_link" else "nav_link book_nav_link"
+  let indentRem := entry.level + 1
+  return <div class={className} style={s!"padding-left: {indentRem}rem"}>
+    <a href={s!"{← getRoot}{entry.href}"}>{entry.title}</a>
+  </div>
+
 /--
 Build the HTML tree representing the module hierarchy.
 -/
@@ -64,10 +72,17 @@ def navContent : BaseHtmlM Html := do
   let config ← read
   if not config.refs.isEmpty then
     staticPages := staticPages.push <div class="nav_link"><a href={s!"{← getRoot}references.html"}>references</a></div>
+  let bookPages ← config.bookNav.mapM bookNavLink
+  let bookSection : Array Html :=
+    if bookPages.isEmpty then
+      #[]
+    else
+      #[<h3>{config.bookNavLabel}</h3>] ++ bookPages
   pure
     <nav class="nav">
       <h3>General documentation</h3>
       [staticPages]
+      [bookSection]
       <h3>Library</h3>
       {← moduleList}
       <div id="settings">

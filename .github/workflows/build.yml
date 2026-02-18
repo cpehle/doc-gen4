@@ -10,9 +10,14 @@ jobs:
   build:
     name: doc-gen test build
     runs-on: ubuntu-latest
+    env:
+      DOCGEN_REMOTE: cpehle
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Add cpehle remote
+        run: git remote add cpehle https://github.com/cpehle/doc-gen4.git
 
       - name: install elan and build doc-gen4
         uses: leanprover/lean-action@v1
@@ -25,7 +30,7 @@ jobs:
           # to ensure that the `--query` test below has a baseline to compare against.
           rm -rf .lake/build/docs
           lake build DocGen4:docs
-        
+
       - name: Check `--query` output
         shell: bash  # enables pipefail
         run: |

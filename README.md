@@ -41,6 +41,38 @@ If you have multiple libraries you want to generate full documentation for:
 lake build Test:docs YourLibraryName:docs
 ```
 
+### mdBook-style chapters
+
+`doc-gen4` can also render a markdown book section similar to Rust's mdBook sidebar/chapter flow.
+
+1. Create `docs/SUMMARY.md` in your root package.
+2. Add chapter links in mdBook style, for example:
+   ```md
+   - [Introduction](intro.md)
+   - [Getting Started](guide/getting-started.md)
+   ```
+3. Add the referenced markdown files under `docs/`.
+4. Build docs as usual (`lake build YourLibraryName:docs`).
+
+By default chapters are generated under `.lake/build/doc/book/` and shown in the left sidebar under **Book**.
+
+You can configure this inline at the top of `SUMMARY.md`:
+
+```md
+---
+docgen:
+  enabled: true
+  label: Guides
+  output: guides
+---
+- [Introduction](intro.md)
+- [Getting Started](guide/getting-started.md)
+```
+
+- `docgen.enabled`: enable/disable chapter rendering.
+- `docgen.label`: sidebar section title.
+- `docgen.output`: output subdirectory under `.lake/build/doc/`.
+
 Note that `doc-gen4` currently always generates documentation for `Lean`, `Init`, `Lake` and `Std`
 in addition to the provided targets.
 

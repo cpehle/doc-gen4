@@ -2,3 +2,6 @@
 /lake-packages/*
 lakefile.olean
 static/BerkeleyMonoVariable.woff2
+
+.gemini/
+gha-creds-*.json

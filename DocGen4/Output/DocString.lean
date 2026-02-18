@@ -66,9 +66,22 @@ def nameToLink? (s : String) : HtmlM (Option String) := do
   1. if the link starts with `##`, a name search is used, and will use `find` if not found
   2. if the link starts with `#`, it's treated as id link, no modification
   3. if the link starts with `http`, it's an absolute one, no modification
-  4. otherwise it's a relative link, extend it with base url
+  4. otherwise it's a relative link; in book mode it stays relative, else it is extended with base url
 -/
 def extendLink (s : String)  : HtmlM String := do
+  let rewriteMarkdownExt (href : String) : String :=
+    let queryPos := href.startPos.find '?'
+    let hashPos := href.startPos.find '#'
+    let cutPos :=
+      if queryPos = href.endPos then hashPos
+      else if hashPos = href.endPos then queryPos
+      else if queryPos < hashPos then queryPos else hashPos
+    let pathPart := href.extract href.startPos cutPos
+    let suffix := href.extract cutPos href.endPos
+    if pathPart.endsWith ".md" then
+      (pathPart.dropEnd 3).copy ++ ".html" ++ suffix
+    else
+      href
   -- for intra doc links
   if s.startsWith "##" then
     if let some link ← nameToLink? (s.drop 2).copy then
@@ -79,9 +92,12 @@ def extendLink (s : String)  : HtmlM String := do
   else if s.startsWith "#" then
     return s
   -- for absolute and relative urls
-  else if s.startsWith "http" then
+  else if s.startsWith "http" || s.startsWith "mailto:" then
     return s
-  else return ((← getRoot) ++ s)
+  else if ← getPreserveRelativeLinks then
+    return rewriteMarkdownExt s
+  else
+    return (← getRoot) ++ s
 
 /-- Find a bibitem if `href` starts with `thePrefix`. -/
 def findBibitem? (href : String) (thePrefix : String := "") : HtmlM (Option BibItem) := do
