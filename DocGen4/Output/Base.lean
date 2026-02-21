@@ -268,6 +268,8 @@ are used in documentation generation, notably JS and CSS ones.
 
   def howAboutJs : String := include_str "../../static/how-about.js"
   def searchJs : String := include_str "../../static/search.js"
+  def shikiJs : String := include_str "../../static/shiki.js"
+  def shikiRuntimeJs : String := include_str "../../static/shiki-runtime.js"
   def instancesJs : String := include_str "../../static/instances.js"
   def importedByJs : String := include_str "../../static/importedBy.js"
   def findJs : String := include_str "../../static/find/find.js"

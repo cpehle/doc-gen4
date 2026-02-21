@@ -36,6 +36,7 @@ def baseHtmlGenerator (title : String) (site : Array Html) : BaseHtmlM Html := d
         [moduleConstant]
         <script type="module" src={s!"{← getRoot}jump-src.js"}></script>
         <script type="module" src={s!"{← getRoot}search.js"}></script>
+        <script type="module" src={s!"{← getRoot}shiki.js"}></script>
         <script type="module" src={s!"{← getRoot}how-about.js"}></script>
         <script type="module" src={s!"{← getRoot}instances.js"}></script>
         <script type="module" src={s!"{← getRoot}importedBy.js"}></script>

@@ -567,6 +567,10 @@ pre code {
   padding: 0;
 }
 
+pre.shiki code {
+  background: transparent;
+}
+
 #howabout code {
   background: inherit;
   border-color: transparent;
