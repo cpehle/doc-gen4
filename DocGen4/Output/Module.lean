@@ -164,11 +164,18 @@ def moduleMemberToHtml (module : Name) (member : ModuleMember) : HtmlM Html := d
   | ModuleMember.docInfo d => docInfoToHtml module d
   | ModuleMember.modDoc d => modDocToHtml d
 
-def declarationToNavLink (module : Name) : Html :=
+def declarationToNavLink (declName : Name) : Html :=
   <div class="nav_link">
-    <a class="break_within" href={s!"#{module.toString}"}>
-      [breakWithin module.toString]
+    <a class="break_within" href={s!"#{declName.toString}"}>
+      [breakWithin declName.toString]
     </a>
+  </div>
+
+def moduleViewToggle : Html :=
+  <div class="module_view_toggle" id="module_view_toggle">
+    <span class="module_view_toggle_label">Declarations</span>
+    <button class="module_view_toggle_button" id="module_view_source" type="button">declaration order</button>
+    <button class="module_view_toggle_button" id="module_view_kind" type="button">group by kind</button>
   </div>
 
 /--
@@ -206,7 +213,9 @@ def internalNav (members : Array Name) (moduleName : Name) : HtmlM Html := do
           <ul id={s!"imported-by-{moduleName}"} class="imported-by-list"> </ul>
         </details>
       </div>
-      [members.map declarationToNavLink]
+      <div class="internal_nav_decls">
+        [members.map declarationToNavLink]
+      </div>
     </nav>
 
 /--
@@ -218,7 +227,7 @@ def moduleToHtml (module : Process.Module) : HtmlM Html := withTheReader SiteBas
   let memberNames := filterDocInfo relevantMembers |>.map DocInfo.getName
   templateLiftExtends (baseHtmlGenerator module.name.toString) <| pure #[
     ← internalNav memberNames module.name,
-    Html.element "main" false #[] memberDocs
+    Html.element "main" false #[] <| #[moduleViewToggle] ++ memberDocs
   ]
 
 end Output

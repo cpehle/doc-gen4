@@ -317,6 +317,10 @@ nav {
   margin-bottom: 0.95rem;
 }
 
+.internal_nav_decls {
+  margin-top: 0.45rem;
+}
+
 .internal_nav details {
   margin-bottom: 0.55rem;
 }
@@ -355,20 +359,63 @@ nav {
 }
 
 .nav details > * {
-  padding-left: 0.58rem;
+  padding-left: 0.5rem;
 }
 
-.nav summary {
-  cursor: pointer;
+.nav .nav_summary {
+  display: flex;
+  align-items: center;
+  gap: 0.22rem;
+  list-style: none;
   padding-left: 0;
+  cursor: default;
 }
 
-.nav summary::marker {
-  font-size: 0.82em;
+.nav .nav_summary::marker {
+  content: '';
 }
 
-.nav .nav_file {
-  display: inline-block;
+.nav .nav_summary::-webkit-details-marker {
+  display: none;
+}
+
+.nav .nav_toggle_button {
+  width: 1rem;
+  height: 1rem;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  color: var(--muted-text-color);
+  font-size: 0.74rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.nav .nav_sect > .nav_summary .nav_toggle_button::before {
+  content: '▸';
+  display: block;
+}
+
+.nav .nav_sect[open] > .nav_summary .nav_toggle_button::before {
+  content: '▾';
+}
+
+.nav .nav_toggle_button:hover {
+  color: var(--text-color);
+}
+
+.nav .nav_toggle_button:focus-visible {
+  outline: 1px solid var(--border-strong);
+  outline-offset: 1px;
+}
+
+.nav .nav_label_link {
+  color: inherit;
+}
+
+.nav .nav_label_link:hover {
+  color: var(--text-color);
 }
 
 .nav h3 {
@@ -416,6 +463,61 @@ nav {
 
 .break_within {
   overflow-wrap: anywhere;
+}
+
+.module_view_toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.35rem 0 0.95rem;
+  font-size: var(--font-size-small);
+  color: var(--muted-text-color);
+}
+
+.module_view_toggle_label {
+  margin-right: 0.15rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.module_view_toggle_button {
+  padding: 0.18rem 0.52rem;
+  border: 1px solid var(--border-color);
+  background: var(--panel-bg);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--muted-text-color);
+}
+
+.module_view_toggle_button:hover {
+  border-color: var(--border-strong);
+}
+
+.module_view_toggle_button.is-active {
+  background: var(--code-bg);
+  color: var(--text-color);
+  border-color: var(--border-strong);
+}
+
+.module_kind_section {
+  margin-top: 1.85rem;
+}
+
+.module_kind_heading {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 560;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted-text-color);
+  scroll-margin-top: var(--fragment-offset);
+}
+
+.module_kind_section .decl:first-of-type {
+  margin-top: 0.95rem;
 }
 
 #settings {

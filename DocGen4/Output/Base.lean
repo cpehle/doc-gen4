@@ -258,13 +258,14 @@ section Static
 The following section contains all the statically included files that
 are used in documentation generation, notably JS and CSS ones.
 -/
-  -- Touch this module when embedded static/style.css changes (fragment-offset bump).
+  -- Touch this module when embedded static assets change (e.g. style.css/nav.js/module-view.js). v2
   def styleCss : String := include_str "../../static/style.css"
   def faviconSvg : String := include_str "../../static/favicon.svg"
   def declarationDataCenterJs : String := include_str "../../static/declaration-data.js"
   def colorSchemeJs : String := include_str "../../static/color-scheme.js"
   def jumpSrcJs : String := include_str "../../static/jump-src.js"
   def navJs : String := include_str "../../static/nav.js"
+  def moduleViewJs : String := include_str "../../static/module-view.js"
 
   def howAboutJs : String := include_str "../../static/how-about.js"
   def searchJs : String := include_str "../../static/search.js"

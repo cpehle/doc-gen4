@@ -37,11 +37,16 @@ partial def moduleListDir (h : Hierarchy) : BaseHtmlM Html := do
   let dirNodes ← dirs.mapM moduleListDir
   let fileNodes ← files.mapM moduleListFile
   let moduleLink ← moduleNameToLink h.getName
-  let summary ← do
+  let label : Html ← do
     if h.isFile then
-      pure <summary>{s!"{h.getName.getString!} ("}<a href={← moduleNameToLink h.getName}>file</a>)</summary>
+      pure <a class="nav_label_link" href={moduleLink}>{h.getName.getString!}</a>
     else
-      pure <summary>{h.getName.getString!}</summary>
+      pure <span class="nav_label_text">{h.getName.getString!}</span>
+  let summary :=
+    <summary class="nav_summary">
+      <button class="nav_toggle_button" type="button" "aria-label"={s!"toggle {h.getName.getString!}"}></button>
+      {label}
+    </summary>
   pure
     <details class="nav_sect" "data-path"={moduleLink} [if (← getCurrentName).any (h.getName.isPrefixOf ·) then #[("open", "")] else #[]]>
       {summary}
