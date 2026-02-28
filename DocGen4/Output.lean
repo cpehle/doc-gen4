@@ -8,6 +8,7 @@ import DocGen4.Process
 import DocGen4.Output.Base
 import DocGen4.Output.Index
 import DocGen4.Output.Module
+import DocGen4.Output.ModuleMarkdown
 import DocGen4.Output.NotFound
 import DocGen4.Output.Find
 import DocGen4.Output.References
@@ -136,17 +137,28 @@ def htmlOutputResults (baseConfig : SiteBaseContext) (result : AnalyzerResult) (
       currentName := some modName
     }
     let (moduleHtml, cfg) := moduleToHtml module |>.run {} config moduleConfig
+    let (moduleMarkdown, _) := moduleToMarkdown module |>.run {} config moduleConfig
     let (tactics, cfg) := module.tactics.mapM TacticInfo.docStringToHtml |>.run cfg config baseConfig
     if not cfg.errors.isEmpty then
       throw <| IO.userError s!"There are errors when generating '{filePath}': {cfg.errors}"
     if let .some d := filePath.parent then
       FS.createDirAll d
     FS.writeFile filePath moduleHtml.toString
+
+    let mdRelFilePath := basePathComponent / moduleNameToMarkdownFile modName
+    let mdFilePath := baseConfig.buildDir / mdRelFilePath
+    if let some d := mdFilePath.parent then
+      FS.createDirAll d
+    FS.writeFile mdFilePath moduleMarkdown
+
     FS.writeFile (declarationsBasePath baseConfig.buildDir / s!"backrefs-{module.name}.json") (toString (toJson cfg.backrefs))
     saveTacticsJSON (declarationsBasePath baseConfig.buildDir / s!"tactics-{module.name}.json") tactics
     -- The output paths need to be relative to the build directory, as they are stored in a build
     -- artifact.
     outputs := outputs.push relFilePath
+
+  let summaryMarkdown := ReaderT.run summaryToMarkdown baseConfig
+  FS.writeFile (basePath baseConfig.buildDir / "SUMMARY.md") summaryMarkdown
 
   return outputs
 
@@ -244,6 +256,11 @@ def htmlOutputIndex (baseConfig : SiteBaseContext) (staticDir : Option System.Fi
           throw <| IO.userError s!"failed to parse file '{entry.path}': {err}"
         | .ok (module : JsonModule) =>
           index := index.addModule module |>.run baseConfig
+
+  let mut indexedDocs : List (String × JsonIndexedDocumentInfo) := []
+  for doc in baseConfig.documents do
+    indexedDocs := (doc.title, { title := doc.title, kind := doc.kind, docLink := doc.docLink, previewText := doc.previewText }) :: indexedDocs
+  index := { index with documents := indexedDocs }
 
   let finalJson := toJson index
   -- The root JSON for find
