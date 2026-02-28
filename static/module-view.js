@@ -109,6 +109,25 @@
       replaceElementChildren(main, originalMainChildren);
     }
 
+    function getKindColorClass(kind) {
+      switch (kind) {
+        case "def":
+        case "instance":
+          return "text-blue-500 dark:text-blue-400";
+        case "theorem":
+          return "text-purple-500 dark:text-purple-400";
+        case "axiom":
+        case "opaque":
+          return "text-teal-500 dark:text-teal-400";
+        case "structure":
+        case "inductive":
+        case "class":
+          return "text-yellow-600 dark:text-yellow-500";
+        default:
+          return "text-neutral-500 dark:text-neutral-400";
+      }
+    }
+
     function renderKindGrouped() {
       replaceElementChildren(main, preDeclarationNodes);
       for (const kind of orderedKinds) {
@@ -121,9 +140,20 @@
         section.setAttribute("data-kind", kind);
 
         const heading = document.createElement("h2");
-        heading.className = "module_kind_heading";
+        heading.className = "text-xs uppercase tracking-widest mt-12 mb-6 flex items-baseline gap-2";
         heading.id = `_decl_kind_${kind}`;
-        heading.textContent = `${kindLabel(kind)} (${declarations.length})`;
+        
+        const labelSpan = document.createElement("span");
+        labelSpan.className = getKindColorClass(kind);
+        labelSpan.textContent = kindLabel(kind);
+        
+        const countSpan = document.createElement("span");
+        countSpan.className = "text-[var(--muted-text-color)] font-normal";
+        countSpan.textContent = `(${declarations.length})`;
+
+        heading.appendChild(labelSpan);
+        heading.appendChild(countSpan);
+        
         section.appendChild(heading);
 
         for (const decl of declarations) {
@@ -151,7 +181,31 @@
       for (const kind of orderedKinds) {
         const links = navLinksByKind.get(kind);
         if (links && links.length > 0) {
-          groupedLinks.push(...links);
+          const details = document.createElement("details");
+          details.className = "mb-3 group";
+          details.open = true;
+
+          const summary = document.createElement("summary");
+          summary.className = "w-full cursor-pointer font-bold uppercase tracking-widest text-[10px] mb-2 flex justify-between items-center list-none [&::-webkit-details-marker]:hidden";
+          
+          const labelSpan = document.createElement("span");
+          labelSpan.className = getKindColorClass(kind);
+          labelSpan.textContent = kindLabel(kind);
+          summary.appendChild(labelSpan);
+          
+          const svgHtml = '<svg class="chevron w-4 h-4 text-[var(--muted-text-color)] " fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
+          summary.insertAdjacentHTML('beforeend', svgHtml);
+          
+          details.appendChild(summary);
+
+          const ul = document.createElement("ul");
+          ul.className = "list-none p-0 pl-2 m-0 border-l border-[var(--border-color)]";
+          for (const link of links) {
+            ul.appendChild(link);
+          }
+          details.appendChild(ul);
+          
+          groupedLinks.push(details);
         }
       }
       replaceElementChildren(internalNavDecls, groupedLinks);
@@ -265,9 +319,94 @@
     }
   }
 
+  function initScrollSpy() {
+    let activeLink = null;
+
+    function onScroll() {
+      // Re-query links dynamically in case order changed
+      const navLinks = Array.from(document.querySelectorAll('.internal_nav a[href^="#"]')).filter(
+        link => link.getAttribute('href') !== '#top'
+      );
+      if (navLinks.length === 0) return;
+
+      const targetElements = navLinks
+        .map(link => {
+          try {
+            const id = link.getAttribute('href').slice(1);
+            return document.getElementById(id);
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean);
+
+      if (targetElements.length === 0) return;
+
+      let closestDecl = null;
+      let minDistance = -Infinity; // Distance from the ideal trigger line (e.g. top third)
+      const triggerLine = window.innerHeight / 3;
+
+      for (const el of targetElements) {
+        const rect = el.getBoundingClientRect();
+        // We only consider elements whose top is above the trigger line
+        if (rect.top <= triggerLine) {
+          if (rect.top > minDistance) {
+            minDistance = rect.top;
+            closestDecl = el;
+          }
+        }
+      }
+
+      // If nothing is above the trigger line, default to the first element
+      if (!closestDecl && targetElements.length > 0) {
+        closestDecl = targetElements[0];
+        let minTop = Infinity;
+        for (const el of targetElements) {
+          const top = el.getBoundingClientRect().top;
+          if (top < minTop) {
+            minTop = top;
+            closestDecl = el;
+          }
+        }
+      }
+
+      if (closestDecl) {
+        const id = closestDecl.id;
+        const correspondingLink = navLinks.find(link => link.getAttribute('href') === '#' + id);
+        if (correspondingLink && correspondingLink !== activeLink) {
+          if (activeLink) {
+            activeLink.classList.remove('font-bold', 'bg-blue-50', 'dark:bg-blue-900/50', 'px-2', 'py-1', 'rounded', 'block', 'text-blue-800', 'dark:text-blue-200', '-ml-2');
+            activeLink.classList.add('text-blue-600', 'dark:text-blue-400');
+          }
+          correspondingLink.classList.remove('text-blue-600', 'dark:text-blue-400');
+          correspondingLink.classList.add('font-bold', 'bg-blue-50', 'dark:bg-blue-900/50', 'px-2', 'py-1', 'rounded', 'block', 'text-blue-800', 'dark:text-blue-200', '-ml-2');
+          activeLink = correspondingLink;
+          
+          const navContainer = correspondingLink.closest('.internal_nav');
+          if (navContainer) {
+            const linkRect = correspondingLink.getBoundingClientRect();
+            const navRect = navContainer.getBoundingClientRect();
+            if (linkRect.top < navRect.top || linkRect.bottom > navRect.bottom) {
+              correspondingLink.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+          }
+        }
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    document.getElementById("module_view_source")?.addEventListener("click", () => setTimeout(onScroll, 50));
+    document.getElementById("module_view_kind")?.addEventListener("click", () => setTimeout(onScroll, 50));
+    onScroll();
+  }
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initModuleViewToggle, { once: true });
+    document.addEventListener("DOMContentLoaded", () => {
+      initModuleViewToggle();
+      initScrollSpy();
+    }, { once: true });
   } else {
     initModuleViewToggle();
+    initScrollSpy();
   }
 })();

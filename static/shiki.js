@@ -85,6 +85,13 @@ async function highlightAllCodeBlocks() {
     }
     const renderedPre = renderPreFromHtml(renderedHtml);
     if (!renderedPre) continue;
+    
+    // Preserve original classes (like Tailwind utility classes)
+    const originalClasses = Array.from(pre.classList);
+    if (originalClasses.length > 0) {
+      renderedPre.classList.add(...originalClasses);
+    }
+    
     renderedPre.dataset.shikiSource = source;
     renderedPre.dataset.shikiLang = lang;
     renderedPre.dataset.shikiTheme = theme;
