@@ -55,6 +55,16 @@ structure BookNavEntry where
   deriving FromJson, ToJson, Inhabited
 
 /--
+Data for indexing free-form documents like book chapters.
+-/
+structure DocumentData where
+  title : String
+  kind : String
+  docLink : String
+  previewText : String
+  deriving FromJson, ToJson, Inhabited
+
+/--
 The context used in the `BaseHtmlM` monad for HTML templating.
 -/
 structure SiteBaseContext where
@@ -89,6 +99,11 @@ structure SiteBaseContext where
   Section label for mdBook-style navigation.
   -/
   bookNavLabel : String := "Book"
+  /--
+  Optional indexed documents (e.g. guides) for search.
+  -/
+  documents : Array DocumentData := #[]
+
   /--
   Current page path relative to the generated doc root.
   -/
@@ -218,6 +233,10 @@ def moduleNameToLink (n : Name) : BaseHtmlM String := do
   let parts := n.components.map (Name.toString (escape := False))
   return (← getRoot) ++ (parts.intersperse "/").foldl (· ++ ·) "" ++ ".html"
 
+def moduleNameToMarkdownLink (n : Name) : BaseHtmlM String := do
+  let parts := n.components.map (Name.toString (escape := False))
+  return (← getRoot) ++ (parts.intersperse "/").foldl (· ++ ·) "" ++ ".md"
+
 /--
 Returns the HTML doc-gen4 link to a module name.
 -/
@@ -230,6 +249,12 @@ Returns the path to the HTML file that contains information about a module.
 def moduleNameToFile (n : Name) : FilePath :=
   if let base :: parts := n.components.map (Name.toString (escape := False)) then
     FilePath.addExtension (parts.foldl (· / ⟨·⟩) base) "html"
+  else
+    panic!"anonymous module name is illegal"
+
+def moduleNameToMarkdownFile (n : Name) : FilePath :=
+  if let base :: parts := n.components.map (Name.toString (escape := False)) then
+    FilePath.addExtension (parts.foldl (· / ⟨·⟩) base) "md"
   else
     panic!"anonymous module name is illegal"
 
@@ -258,7 +283,7 @@ section Static
 The following section contains all the statically included files that
 are used in documentation generation, notably JS and CSS ones.
 -/
-  -- Touch this module when embedded static assets change (e.g. style.css/nav.js/module-view.js). v2
+  -- Touch this module when embedded static assets change (e.g. style.css/nav.js/module-view.js). v4
   def styleCss : String := include_str "../../static/style.css"
   def faviconSvg : String := include_str "../../static/favicon.svg"
   def declarationDataCenterJs : String := include_str "../../static/declaration-data.js"
@@ -268,7 +293,9 @@ are used in documentation generation, notably JS and CSS ones.
   def moduleViewJs : String := include_str "../../static/module-view.js"
 
   def howAboutJs : String := include_str "../../static/how-about.js"
+  -- Force rebuild to pick up new JS 6
   def searchJs : String := include_str "../../static/search.js"
+  -- Force rebuild to pick up new shiki.js 1
   def shikiJs : String := include_str "../../static/shiki.js"
   def shikiRuntimeJs : String := include_str "../../static/shiki-runtime.js"
   def instancesJs : String := include_str "../../static/instances.js"
@@ -397,6 +424,8 @@ def baseHtmlHeadDeclarations : BaseHtmlM (Array Html) := do
   return #[
     <meta charset="UTF-8"/>,
     <meta name="viewport" content="width=device-width, initial-scale=1"/>,
+    <script src="https://cdn.tailwindcss.com"></script>,
+    <script>{.raw "tailwind.config = { darkMode: ['selector', '[data-theme=\"dark\"]'], theme: { extend: { fontFamily: { mono: ['\"Berkeley Mono Variable\"', '\"IBM Plex Mono\"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', '\"Liberation Mono\"', '\"Courier New\"', 'monospace'] } } } }"}</script>,
     <link rel="stylesheet" href={s!"{← getRoot}style.css"}/>,
     <link rel="icon" href={s!"{← getRoot}favicon.svg"}/>,
     <link rel="mask-icon" href={s!"{← getRoot}favicon.svg"} color="#000000"/>,
@@ -404,3 +433,4 @@ def baseHtmlHeadDeclarations : BaseHtmlM (Array Html) := do
   ]
 
 end DocGen4.Output
+-- force rebuild 1
