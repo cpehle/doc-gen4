@@ -84,10 +84,10 @@ def refItem (ref : BibItem) (backrefs : Array BackrefItem) : BaseHtmlM Html := d
 def references (backrefs : Array BackrefItem) :
     BaseHtmlM Html := templateLiftExtends (baseHtml "References") do
   pure <|
-    <main>
+    <main class="px-6 py-6 flex-auto min-w-0 bg-[var(--body-bg)] text-[var(--text-color)] text-[var(--text-color)]" style="max-width: var(--content-width);">
       <a id="top"></a>
-      <h1>References</h1>
-      <ul>
+      <h1 class="text-3xl font-bold mb-6">References</h1>
+      <ul class="list-none p-0 space-y-4 text-[var(--muted-text-color)] leading-relaxed">
       [← (← read).refs.mapM (refItem · backrefs)]
       </ul>
     </main>

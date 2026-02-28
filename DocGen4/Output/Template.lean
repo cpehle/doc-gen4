@@ -49,20 +49,44 @@ def baseHtmlGenerator (title : String) (site : Array Html) : BaseHtmlM Html := d
 
         <input id="nav_toggle" type="checkbox"/>
 
-        <header>
-          <h1><label for="nav_toggle"></label><span>Documentation</span></h1>
-          <h2 class="header_filename break_within">[breakWithin title]</h2>
-          <form id="search_form">
-            <input type="text" name="q" autocomplete="off"/>{.raw "&#32;"}
-            <button id="search_button" onclick={s!"javascript: form.action='{← getRoot}search.html';"}>Search</button>
-          </form>
-        </header>
+                        <header class="fixed top-0 left-0 right-0 z-50 flex items-center px-4 border-b bg-[var(--body-bg)] text-[var(--text-color)] border-[var(--border-color)]" style="height: 2.9rem;">
+                          <h1 class="flex items-center text-xs font-medium uppercase tracking-wider m-0 mr-6 text-[var(--muted-text-color)]"><label for="nav_toggle" class="cursor-pointer"></label><span class="hidden sm:inline">Documentation</span></h1>
+                          <h2 class="flex-auto text-sm font-medium m-0 truncate text-[var(--text-color)] font-mono">[breakWithin title]</h2>
+                          
+                          <button id="theme-toggle" class="ml-auto mr-4 flex items-center justify-center w-8 h-8 rounded-sm text-[var(--muted-text-color)] hover:text-[var(--text-color)] border border-[var(--border-color)] bg-[var(--panel-bg)] hover:bg-[var(--code-bg)] transition-colors focus:outline-none" title="Toggle dark mode (⌘T)">
+                            {.raw "<svg id=\"theme-toggle-dark-icon\" class=\"hidden w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z\"></path></svg>"}
+                            {.raw "<svg id=\"theme-toggle-light-icon\" class=\"hidden w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"5\"></circle><line x1=\"12\" y1=\"1\" x2=\"12\" y2=\"3\"></line><line x1=\"12\" y1=\"21\" x2=\"12\" y2=\"23\"></line><line x1=\"4.22\" y1=\"4.22\" x2=\"5.64\" y2=\"5.64\"></line><line x1=\"18.36\" y1=\"18.36\" x2=\"19.78\" y2=\"19.78\"></line><line x1=\"1\" y1=\"12\" x2=\"3\" y2=\"12\"></line><line x1=\"21\" y1=\"12\" x2=\"23\" y2=\"12\"></line><line x1=\"4.22\" y1=\"19.78\" x2=\"5.64\" y2=\"18.36\"></line><line x1=\"18.36\" y1=\"5.64\" x2=\"19.78\" y2=\"4.22\"></line></svg>"}
+                          </button>
 
-        [site]
+                          <button id="search_trigger" class="relative flex-shrink-0 flex items-center w-64 pl-10 pr-12 py-1.5 text-sm rounded-sm bg-neutral-100 dark:bg-neutral-800 border-transparent text-[var(--muted-text-color)] hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-left">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                              {.raw "<svg class=\"w-4 h-4\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 20 20\"><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z\"/></svg>"}
+                            </div>
+                            Search...
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                              <span class="text-[10px] font-medium font-sans border border-neutral-200 dark:border-neutral-700 bg-[var(--body-bg)] text-[var(--text-color)] rounded-sm px-1.5 py-0.5 shadow-sm">{.raw "⌘K"}</span>
+                            </div>
+                          </button>
+                        </header>
+                
+                        <div id="search_modal" class="fixed inset-0 z-[100] hidden bg-neutral-900/50 dark:bg-black/50 backdrop-blur-[2px] p-4 sm:p-6 md:p-[10vh]">
+                          <div class="mx-auto w-full max-w-2xl bg-[var(--body-bg)] text-[var(--text-color)] rounded-sm shadow-2xl flex flex-col overflow-hidden border border-[var(--border-color)] h-[80vh] sm:h-auto sm:max-h-[80vh]">
+                            <form id="search_form" class="relative flex items-center m-0 border-b border-[var(--border-color)] flex-shrink-0" onsubmit="event.preventDefault();">
+                              <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                                {.raw "<svg class=\"w-5 h-5 text-[var(--muted-text-color)]\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 20 20\"><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z\"/></svg>"}
+                              </div>
+                              <input class="w-full bg-transparent pl-12 pr-4 py-4 text-[var(--text-color)] text-lg focus:outline-none placeholder-neutral-400 dark:placeholder-neutral-500" type="text" name="q" autocomplete="off" placeholder="Search declarations..."/>
+                            </form>
+                            <div id="autocomplete_results" class="overflow-auto flex-auto bg-[var(--body-bg)] text-[var(--text-color)]"></div>
+                          </div>
+                        </div>
 
-        {.raw "<!-- NAV_START --><nav class=\"nav\"></nav><!-- NAV_END -->"}
-      </body>
-    </html>
+                        <div class="flex pt-12 min-h-screen bg-[var(--body-bg)] text-[var(--text-color)]">
+                          {.raw "<!-- NAV_START --><nav class=\"nav\"></nav><!-- NAV_END -->"}
+                          [site]
+                        </div>
+                      </body>
+                    </html>
 
 /--
 A comfortability wrapper around `baseHtmlGenerator`.

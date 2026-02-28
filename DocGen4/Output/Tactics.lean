@@ -27,19 +27,23 @@ def TacticInfo.toHtml (tac : TacticInfo Html) : Output.BaseHtmlM Html := do
   let internalName := tac.internalName.toString
   let defLink := (← moduleNameToLink tac.definingModule) ++ "#" ++ internalName
   let tags := ", ".intercalate (tac.tags.map (·.toString)).qsort.toList
-  return <div id={internalName}>
-    <h2>{tac.userName}</h2>
-    {tac.docString}
-    <dl>
-      <dt>Tags:</dt>
-      <dd>{tags}</dd>
-      <dt>Defined in module:</dt>
-      <dd><a href={defLink}>{tac.definingModule.toString}</a></dd>
+  return <div id={internalName} class="tactic">
+    <h2 class="text-xl font-bold mb-6 text-[var(--text-color)]">{tac.userName}</h2>
+    <div class="leading-relaxed text-[var(--text-color)] mb-8">{tac.docString}</div>
+    <dl class="text-sm leading-relaxed m-0 text-[var(--muted-text-color)]">
+      <div class="flex items-baseline mb-2">
+        <dt class="font-bold uppercase tracking-widest text-[10px] text-neutral-500 mr-4 w-32 flex-shrink-0">Tags</dt>
+        <dd class="m-0 font-mono text-xs bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-sm">{tags}</dd>
+      </div>
+      <div class="flex items-baseline">
+        <dt class="font-bold uppercase tracking-widest text-[10px] text-neutral-500 mr-4 w-32 flex-shrink-0">Defined in module</dt>
+        <dd class="m-0"><a class="text-blue-600 dark:text-blue-400 no-underline hover:underline font-mono text-xs" href={defLink}>{tac.definingModule.toString}</a></dd>
+      </div>
     </dl>
   </div>
 
 def TacticInfo.navLink (tac : TacticInfo α) : Html :=
-  <p><a href={"#".append tac.internalName.toString}>{tac.userName}</a></p>
+  <p class="m-0 mb-1"><a class="no-underline text-blue-600 dark:text-blue-400 hover:underline text-xs" href={"#".append tac.internalName.toString}>{tac.userName}</a></p>
 
 end DocGen4.Process
 
@@ -54,13 +58,13 @@ Render the HTML for the tactics listing page.
 def tactics (tacticInfo : Array (TacticInfo Html)) : BaseHtmlM Html := do
   let sectionsHtml ← tacticInfo.mapM (· |>.toHtml)
   templateLiftExtends (baseHtmlGenerator "Tactics") <| pure #[
-    <nav class="internal_nav">
-      <p><a href="#top">return to top</a></p>
+    Html.element "main" true #[("class", "px-6 py-6 flex-auto min-w-0 bg-[var(--body-bg)] text-[var(--text-color)] text-[var(--text-color)]"), ("style", "max-width: var(--content-width);")] (
+      #[<p class="text-lg leading-relaxed text-[var(--muted-text-color)] mb-8">The tactic language is a special-purpose programming language for constructing proofs, indicated using the keyword <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded text-sm">by</code>.</p>] ++
+      sectionsHtml),
+    <nav class="flex-shrink-0 sticky h-[calc(100vh-2.9rem)] top-[2.9rem] border-l border-[var(--border-color)] bg-[var(--body-bg)] text-[var(--text-color)] px-4 py-6 overflow-auto text-sm leading-relaxed shadow-sm" style="width: clamp(15rem, 19vw, 21rem);">
+      <p class="m-0 mb-3"><a class="no-underline text-blue-600 dark:text-blue-400 hover:underline font-medium" href="#top">Return to top</a></p>
       [tacticInfo.map (· |>.navLink)]
-    </nav>,
-    Html.element "main" false #[] (
-      #[<p>The tactic language is a special-purpose programming language for constructing proofs, indicated using the keyword <code>by</code>.</p>] ++
-      sectionsHtml)
+    </nav>
   ]
 
 def loadTacticsJSON (buildDir : System.FilePath) : IO (Array (TacticInfo Html)) := do
