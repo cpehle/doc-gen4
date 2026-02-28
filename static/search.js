@@ -4,9 +4,12 @@
 
 import { DeclarationDataCenter } from "./declaration-data.js";
 
-// Search form and input in the upper right toolbar
+// Modal elements
+const SEARCH_TRIGGER = document.querySelector("#search_trigger");
+const SEARCH_MODAL = document.querySelector("#search_modal");
 const SEARCH_FORM = document.querySelector("#search_form");
-const SEARCH_INPUT = SEARCH_FORM.querySelector("input[name=q]");
+const SEARCH_INPUT = SEARCH_FORM ? SEARCH_FORM.querySelector("input[name=q]") : null;
+const AC_RESULTS = document.querySelector("#autocomplete_results");
 
 // Search form on the /search.html_page.  These may be null.
 const SEARCH_PAGE_INPUT = document.querySelector("#search_page_query")
@@ -20,27 +23,130 @@ const SEARCH_PAGE_MAX_RESULTS = undefined
 // Must be positive, may be infinite.
 const RESULTS_PER_BLOCK = 50
 
-// Create an `div#autocomplete_results` to hold all autocomplete results.
-let ac_results = document.createElement("div");
-ac_results.id = "autocomplete_results";
-SEARCH_FORM.appendChild(ac_results);
+const RECENT_SEARCHES_KEY = "docgen4_recent_searches";
+
+function saveRecentSearch(resultItem) {
+  let recent = [];
+  try {
+    const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
+    if (stored) recent = JSON.parse(stored);
+  } catch (e) {}
+
+  recent = recent.filter(item => item.name !== resultItem.name || item.kind !== resultItem.kind);
+
+  recent.unshift({
+    name: resultItem.name,
+    kind: resultItem.kind,
+    docLink: resultItem.docLink,
+    previewText: resultItem.previewText,
+    typeSig: resultItem.typeSig
+  });
+
+  if (recent.length > 5) recent = recent.slice(0, 5);
+
+  try {
+    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(recent));
+  } catch (e) {}
+}
+
+function renderRecentSearches(sr, dataCenter) {
+  let recent = [];
+  try {
+    const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
+    if (stored) recent = JSON.parse(stored);
+  } catch (e) {}
+
+  if (recent.length === 0) {
+    sr.classList.add("hidden");
+    return;
+  }
+
+  sr.classList.remove("hidden");
+  
+  const header = document.createElement("div");
+  header.className = "px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--muted-text-color)] bg-neutral-50/50 dark:bg-neutral-800/50 border-b border-[var(--border-color)]";
+  header.textContent = "Recent";
+  sr.appendChild(header);
+
+  const innerBlock = sr.appendChild(document.createElement("div"));
+  innerBlock.classList.add("flex", "flex-col", "w-full");
+
+  for (const item of recent) {
+    renderSearchResultRow(item, innerBlock, true, dataCenter);
+  }
+}
+
+/**
+ * Open and close search modal
+ */
+function openSearch() {
+  if (SEARCH_MODAL) {
+    SEARCH_MODAL.classList.remove("hidden");
+    SEARCH_MODAL.classList.add("flex");
+    if (SEARCH_INPUT) {
+      SEARCH_INPUT.focus();
+      // Trigger input event to show recents if empty
+      SEARCH_INPUT.dispatchEvent(new Event("input"));
+    }
+    document.body.style.overflow = "hidden"; // Prevent background scrolling
+  }
+}
+
+function closeSearch() {
+  if (SEARCH_MODAL) {
+    SEARCH_MODAL.classList.add("hidden");
+    SEARCH_MODAL.classList.remove("flex");
+    if (SEARCH_INPUT) SEARCH_INPUT.blur();
+    document.body.style.overflow = "";
+  }
+}
+
+if (SEARCH_TRIGGER) {
+  SEARCH_TRIGGER.addEventListener("click", openSearch);
+}
+
+if (SEARCH_MODAL) {
+  // Close when clicking outside the modal content
+  SEARCH_MODAL.addEventListener("click", (ev) => {
+    if (ev.target === SEARCH_MODAL) {
+      closeSearch();
+    }
+  });
+}
+
+/**
+ * Global shortcut to focus the search box (Cmd+K, Ctrl+K, or /)
+ */
+document.addEventListener("keydown", (ev) => {
+  if (
+    ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 'k') ||
+    (ev.key === '/' && document.activeElement !== SEARCH_INPUT && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName))
+  ) {
+    ev.preventDefault();
+    openSearch();
+  } else if (ev.key === 'Escape') {
+    closeSearch();
+  }
+});
 
 /**
  * Attach `selected` class to the the selected autocomplete result.
  */
 function handleSearchCursorUpDown(down) {
-  const sel = ac_results.querySelector(`.selected`);
-  const results = [...ac_results.getElementsByClassName("search_result")];
+  if (!AC_RESULTS) return;
+  const sel = AC_RESULTS.querySelector(`.selected`);
+  const results = [...AC_RESULTS.getElementsByClassName("search_result")];
+  if (results.length === 0) return;
   const selIndex = results.indexOf(sel);
   let toSelect;
   if (sel) {
-    sel.classList.remove("selected");
+    sel.classList.remove("selected", "bg-neutral-100", "dark:bg-neutral-800");
     toSelect = results[down ? selIndex + 1 : selIndex - 1];
   } else {
     toSelect = down ? results[0] : results[results.length-1];
   }
   if (toSelect){
-    toSelect.classList.add("selected");
+    toSelect.classList.add("selected", "bg-neutral-100", "dark:bg-neutral-800");
     toSelect.scrollIntoView({block:"nearest"});
   }
 }
@@ -49,31 +155,36 @@ function handleSearchCursorUpDown(down) {
  * Perform search (when enter is pressed).
  */
 function handleSearchEnter() {
-  const sel = ac_results.querySelector(`.selected .result_link a`) || document.querySelector(`#search_button`);
-  sel.click();
+  if (!AC_RESULTS) return;
+  const sel = AC_RESULTS.querySelector(`.selected .result_link a`) || AC_RESULTS.querySelector(`.search_result .result_link a`);
+  if (sel) {
+    sel.click();
+  }
 }
 
 /**
  * Allow user to navigate autocomplete results with up/down arrow keys, and choose with enter.
  */
-SEARCH_INPUT.addEventListener("keydown", (ev) => {
-  switch (ev.key) {
-    case "Down":
-    case "ArrowDown":
-      ev.preventDefault();
-      handleSearchCursorUpDown(true);
-      break;
-    case "Up":
-    case "ArrowUp":
-      ev.preventDefault();
-      handleSearchCursorUpDown(false);
-      break;
-    case "Enter":
-      ev.preventDefault();
-      handleSearchEnter();
-      break;
-  }
-});
+if (SEARCH_INPUT) {
+  SEARCH_INPUT.addEventListener("keydown", (ev) => {
+    switch (ev.key) {
+      case "Down":
+      case "ArrowDown":
+        ev.preventDefault();
+        handleSearchCursorUpDown(true);
+        break;
+      case "Up":
+      case "ArrowUp":
+        ev.preventDefault();
+        handleSearchCursorUpDown(false);
+        break;
+      case "Enter":
+        ev.preventDefault();
+        handleSearchEnter();
+        break;
+    }
+  });
+}
 
 /**
  * Remove all children of a DOM node.
@@ -112,18 +223,69 @@ function renderTypeSig(typeSig, declarations) {
       frag.appendChild(document.createTextNode(seg));
     } else if (Array.isArray(seg) && seg.length >= 2 && seg[1] != null) {
       const a = document.createElement("a");
-      const decl = declarations[seg[1]];
+      const decl = declarations && declarations[seg[1]];
       if (decl) {
         a.href = SITE_ROOT + decl.docLink;
       }
       a.textContent = seg[0];
-      a.classList.add("result_type_link");
+      a.classList.add("result_type_link", "text-neutral-500", "dark:text-neutral-400", "hover:underline");
       frag.appendChild(a);
     } else if (Array.isArray(seg) && seg.length >= 1) {
       frag.appendChild(document.createTextNode(seg[0]));
     }
   }
   return frag;
+}
+
+function renderSearchResultRow(item, container, autocomplete, dataCenter) {
+  const row = container.appendChild(document.createElement("div"));
+  row.classList.add("search_result", "flex", "items-center", "px-4", "py-3", "border-b", "border-neutral-100", "dark:border-neutral-800", "hover:bg-neutral-50", "dark:hover:bg-neutral-800/50", "transition-colors", "cursor-pointer");
+  
+  const linkdiv = row.appendChild(document.createElement("div"))
+  linkdiv.classList.add("result_link", "flex", "items-start", "w-full", "min-w-0");
+  
+  const kindSpan = linkdiv.appendChild(document.createElement("span"));
+  kindSpan.classList.add("result_kind", "flex-shrink-0", "w-20", "mr-3", "mt-0.5", "px-1", "py-0.5", "border", "border-neutral-200", "dark:border-neutral-700", "bg-neutral-50", "dark:bg-neutral-800", "text-[0.65rem]", "font-bold", "tracking-wider", "uppercase", "text-center", "text-neutral-500", "dark:text-neutral-400", "rounded", "hover:border-neutral-400", "dark:hover:border-neutral-500", "hover:text-neutral-900", "dark:hover:text-neutral-100");
+  kindSpan.textContent = item.kind;
+  kindSpan.dataset.kind = item.kind;
+  if (SEARCH_PAGE_INPUT) {
+    kindSpan.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      filterToKind(ev.target.dataset.kind);
+    });
+  }
+
+  const textContainer = linkdiv.appendChild(document.createElement("div"));
+  textContainer.classList.add("flex", "flex-col", "min-w-0", "w-full");
+  
+  const link = textContainer.appendChild(document.createElement("a"));
+  link.classList.add("truncate", "w-full");
+  link.href = SITE_ROOT + item.docLink;
+  
+  link.addEventListener("click", () => {
+    saveRecentSearch(item);
+  });
+  
+  const nameSpan = link.appendChild(document.createElement("span"));
+  nameSpan.classList.add("result_name", "text-neutral-900", "dark:text-neutral-100", "font-mono", "text-sm", "font-semibold", "hover:text-blue-600", "dark:hover:text-blue-400");
+  nameSpan.textContent = item.name;
+  link.title = item.name;
+  
+  // Right side: Type Signature (truncated gracefully)
+  if (item.typeSig) {
+    const sigSpan = textContainer.appendChild(document.createElement("span"));
+    sigSpan.classList.add("result_type", "text-neutral-500", "dark:text-neutral-400", "text-xs", "font-mono", "truncate", "opacity-75", "mt-0.5");
+    if (!autocomplete && dataCenter) {
+      sigSpan.appendChild(renderTypeSig(item.typeSig, dataCenter.declarationData.declarations));
+    } else {
+      sigSpan.appendChild(renderTypeSig(item.typeSig, {}));
+    }
+  } else if (item.previewText) {
+    const previewSpan = textContainer.appendChild(document.createElement("span"));
+    previewSpan.classList.add("result_preview", "text-neutral-500", "dark:text-neutral-400", "text-xs", "truncate", "opacity-75", "mt-0.5");
+    previewSpan.textContent = item.previewText;
+  }
 }
 
 // counts how often `handleSearch` has already been called. Used to terminate the previous call whenever a new one has started.
@@ -136,11 +298,20 @@ async function handleSearch(dataCenter, err, ev, sr, maxResults, autocomplete) {
   const text = ev.target.value;
   const callIndex = ++handleSearchCounter;
 
-  // If no input clear all.
+  if (!sr) return;
+
+  // If no input clear all and show recents.
   if (!text) {
     sr.removeAttribute("state");
     removeAllChildren(sr);
+    if (autocomplete) {
+      renderRecentSearches(sr, dataCenter);
+    }
     return;
+  }
+
+  if (autocomplete) {
+    sr.classList.remove("hidden");
   }
 
   // searching
@@ -166,54 +337,14 @@ async function handleSearch(dataCenter, err, ev, sr, maxResults, autocomplete) {
     // update autocomplete results
     removeAllChildren(sr);
     for (let i = 0; i < result.length; i += RESULTS_PER_BLOCK) {
-      // results are grouped into blocks, each block consisting of an inner block with `display: table`
-      // and an outer block with `content-visibility: auto` that tells the browser to only render it
-      // when it gets close to the viewport. These two wrappers can't be combined into a single element
-      // because those two CSS properties are incompatible.
       const block = document.createElement("div");
       block.classList.add("search_result_block");
       const innerBlock = block.appendChild(document.createElement("div"));
-      innerBlock.classList.add("search_result_block_inner");
-      // put the next batch of results into the block, then insert the block into the DOM
+      innerBlock.classList.add("search_result_block_inner", "flex", "flex-col", "w-full");
       for (let j = i; j < Math.min(result.length, i + RESULTS_PER_BLOCK); j++){
-        const row = innerBlock.appendChild(document.createElement("div"));
-        row.classList.add("search_result");
-        const linkdiv = row.appendChild(document.createElement("div"))
-        linkdiv.classList.add("result_link");
-        // Kind badge (outside the <a> so it can be clicked independently on the search page)
-        const kindSpan = linkdiv.appendChild(document.createElement("span"));
-        kindSpan.classList.add("result_kind");
-        kindSpan.textContent = result[j].kind;
-        kindSpan.dataset.kind = result[j].kind;
-        // On the search page, clicking a kind badge filters to that kind
-        if (SEARCH_PAGE_INPUT) {
-          kindSpan.addEventListener("click", (ev) => {
-            ev.preventDefault();
-            ev.stopPropagation();
-            filterToKind(ev.target.dataset.kind);
-          });
-        }
-        const link = linkdiv.appendChild(document.createElement("a"));
-        link.href = SITE_ROOT + result[j].docLink;
-        // Declaration name
-        const nameSpan = link.appendChild(document.createElement("span"));
-        nameSpan.classList.add("result_name");
-        nameSpan.textContent = result[j].name;
-        link.title = result[j].name;
-        // Type signature (with linked types on the search page)
-        if (result[j].typeSig) {
-          const sigSpan = linkdiv.appendChild(document.createElement("span"));
-          sigSpan.classList.add("result_type");
-          sigSpan.appendChild(document.createTextNode(" : "));
-          if (!autocomplete) {
-            sigSpan.appendChild(renderTypeSig(result[j].typeSig, dataCenter.declarationData.declarations));
-          } else {
-            sigSpan.appendChild(renderTypeSig(result[j].typeSig, {}));
-          }
-        }
+        renderSearchResultRow(result[j], innerBlock, autocomplete, dataCenter);
       }
       sr.appendChild(block);
-      // wait a moment before adding the next block, and only do so if this method hasn't been called since.
       await new Promise(resolve=>setTimeout(resolve,0));
       if (handleSearchCounter!=callIndex) return;
     }
@@ -222,6 +353,7 @@ async function handleSearch(dataCenter, err, ev, sr, maxResults, autocomplete) {
   else {
     removeAllChildren(sr);
     const d = sr.appendChild(document.createElement("a"));
+    d.classList.add("block", "p-4", "text-red-500");
     d.innerText = `Cannot fetch data, please check your network connection.\n${err}`;
   }
   sr.setAttribute("state", "done");
@@ -244,18 +376,22 @@ const SEARCH_DEBOUNCE = 90;
 DeclarationDataCenter.init()
   .then((dataCenter) => {
     // Search autocompletion.
-    SEARCH_INPUT.addEventListener("input", debounce(ev => handleSearch(dataCenter, null, ev, ac_results, AC_MAX_RESULTS, true), SEARCH_DEBOUNCE));
+    if (SEARCH_INPUT) {
+      SEARCH_INPUT.addEventListener("input", debounce(ev => handleSearch(dataCenter, null, ev, AC_RESULTS, AC_MAX_RESULTS, true), SEARCH_DEBOUNCE));
+      SEARCH_INPUT.dispatchEvent(new Event("input"))
+    }
     if(SEARCH_PAGE_INPUT) {
       SEARCH_PAGE_INPUT.addEventListener("input", ev => handleSearch(dataCenter, null, ev, SEARCH_RESULTS, SEARCH_PAGE_MAX_RESULTS, false))
       document.querySelectorAll(".kind_checkbox").forEach((checkbox) =>
         checkbox.addEventListener("input", ev => SEARCH_PAGE_INPUT.dispatchEvent(new Event("input")))
       );
       SEARCH_PAGE_INPUT.dispatchEvent(new Event("input"))
-    };
-    SEARCH_INPUT.dispatchEvent(new Event("input"))
+    }
   })
   .catch(e => {
-    SEARCH_INPUT.addEventListener("input", debounce(ev => handleSearch(null, e, ev, ac_results, AC_MAX_RESULTS, true), SEARCH_DEBOUNCE));
+    if (SEARCH_INPUT) {
+      SEARCH_INPUT.addEventListener("input", debounce(ev => handleSearch(null, e, ev, AC_RESULTS, AC_MAX_RESULTS, true), SEARCH_DEBOUNCE));
+    }
     if(SEARCH_PAGE_INPUT) {
       SEARCH_PAGE_INPUT.addEventListener("input", ev => handleSearch(null, e, ev, SEARCH_RESULTS, SEARCH_PAGE_MAX_RESULTS, false));
     }
