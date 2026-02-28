@@ -180,157 +180,18 @@ label[for='nav_toggle'] {
   display: none;
 }
 
-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 20;
-  height: var(--header-height);
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 0 1rem;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--panel-bg);
-}
-
-header > * {
-  margin: 0;
-}
-
-header h1 {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  white-space: nowrap;
-  font-size: 0.82rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted-text-color);
-}
-
-header .header_filename {
-  flex: 1;
-  overflow-wrap: anywhere;
-  font-family: var(--font-mono);
-  font-size: 0.88rem;
-  font-weight: 450;
-  color: var(--text-color);
-}
-
-#search_form {
-  position: relative;
-  display: inline-flex;
-  align-items: stretch;
-}
-
-#search_form input {
-  width: 21rem;
-  max-width: min(54vw, 21rem);
-  padding: 0.32rem 0.52rem;
-  border: 1px solid var(--border-color);
-  border-right: none;
-  border-radius: 0;
-  background: var(--body-bg);
-  font-size: var(--font-size-small);
-  line-height: 1.4;
-}
-
-#search_form input:focus {
-  outline: none;
-  border-color: var(--border-strong);
-}
-
-#search_form button {
-  padding: 0.32rem 0.72rem;
-  border: 1px solid var(--border-color);
-  border-radius: 0;
-  background: var(--panel-bg);
-  font-size: var(--font-size-small);
-  line-height: 1.4;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-#search_form button:hover {
-  background: var(--code-bg);
-}
-
-main,
-nav {
-  margin-top: var(--header-height);
-}
-
-main {
-  padding: 1.05rem 0.95rem 0;
-  margin-bottom: 40vh;
-  margin-left: calc(var(--left-nav-width) + 1.45rem);
-  margin-right: calc(var(--right-nav-width) + 1.45rem);
-  max-width: min(var(--content-width), calc(100vw - var(--left-nav-width) - var(--right-nav-width) - 4rem));
-  background: transparent;
-}
+/* Header, main, and nav are now primarily styled with Tachyons classes in Lean files */
 
 main p,
 .mod_doc p,
 .note p,
 .tactic p {
-  margin: 0.25rem 0 0.95rem;
   max-width: 78ch;
-  font-family: var(--font-ui);
-  line-height: 1.7;
 }
 
 nav {
-  position: fixed;
-  top: 0;
-  height: calc(100vh - var(--header-height));
-  overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) transparent;
-}
-
-.nav {
-  left: 0;
-  width: var(--left-nav-width);
-  box-shadow: inset -1px 0 0 var(--border-color);
-  background: var(--panel-bg);
-}
-
-.internal_nav {
-  right: 0;
-  width: var(--right-nav-width);
-  border-left: 1px solid var(--border-color);
-  background: var(--panel-bg);
-  padding: 0.95rem 0.85rem 1.5rem;
-  font-family: var(--font-ui);
-  font-size: 0.91rem;
-  line-height: 1.46;
-}
-
-.internal_nav p {
-  margin: 0 0 0.5rem;
-}
-
-.internal_nav .imports {
-  margin-bottom: 0.95rem;
-}
-
-.internal_nav_decls {
-  margin-top: 0.45rem;
-}
-
-.internal_nav details {
-  margin-bottom: 0.55rem;
-}
-
-.internal_nav summary {
-  cursor: pointer;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted-text-color);
 }
 
 .internal_nav .nav_link,
@@ -377,37 +238,6 @@ nav {
 
 .nav .nav_summary::-webkit-details-marker {
   display: none;
-}
-
-.nav .nav_toggle_button {
-  width: 1rem;
-  height: 1rem;
-  border: 0;
-  padding: 0;
-  margin: 0;
-  background: transparent;
-  color: var(--muted-text-color);
-  font-size: 0.74rem;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.nav .nav_sect > .nav_summary .nav_toggle_button::before {
-  content: '▸';
-  display: block;
-}
-
-.nav .nav_sect[open] > .nav_summary .nav_toggle_button::before {
-  content: '▾';
-}
-
-.nav .nav_toggle_button:hover {
-  color: var(--text-color);
-}
-
-.nav .nav_toggle_button:focus-visible {
-  outline: 1px solid var(--border-strong);
-  outline-offset: 1px;
 }
 
 .nav .nav_label_link {
@@ -544,8 +374,7 @@ nav {
 .mod_doc,
 .note,
 .tactic {
-  border: 1px solid var(--border-color);
-  background: var(--panel-bg);
+  /* Removed border and background so Tailwind classes apply cleanly */
 }
 
 .decl,
@@ -556,23 +385,12 @@ nav {
 
 .decl > div,
 .mod_doc {
-  padding: 0.78rem 0.92rem;
+  padding-left: 1rem;
+  padding-right: 0.5rem;
 }
 
 .decl > div {
   overflow-x: auto;
-}
-
-.def,
-.instance,
-.theorem,
-.axiom,
-.opaque,
-.structure,
-.inductive,
-.class {
-  border-left: 3px solid var(--border-strong);
-  background: transparent;
 }
 
 .decl_header {
@@ -769,6 +587,15 @@ pre.shiki code {
   border-top: 2px solid var(--border-color);
 }
 
+details summary svg.chevron {
+  transition: transform 0.2s ease-in-out !important;
+}
+
+details[open] > summary svg.chevron,
+details[open] > summary > div > svg.chevron {
+  transform: rotate(90deg) !important;
+}
+
 .tagfilter-div {
   margin-bottom: 0.6rem;
 }
@@ -778,56 +605,6 @@ pre.shiki code {
 }
 
 /* -- Search page (/search.html) -- */
-
-#search_page_query {
-  display: block;
-  width: 100%;
-  max-width: 40rem;
-  padding: 0.52rem 0.62rem;
-  margin: 0.6rem 0 0.9rem;
-  border: 1px solid var(--border-color);
-  border-radius: 0;
-  background: var(--body-bg);
-  font-family: var(--font-mono);
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-
-#search_page_query:focus {
-  outline: none;
-  border-color: var(--border-strong);
-}
-
-#kinds {
-  margin: 0 0 1.2rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  align-items: center;
-  font-size: var(--font-size-small);
-  color: var(--muted-text-color);
-}
-
-#kinds > :first-child {
-  margin-right: 0.2rem;
-}
-
-.kind_checkbox {
-  display: none;
-}
-
-.kind_checkbox + label {
-  display: inline-block;
-  padding: 0.18rem 0.52rem;
-  border: 1px solid var(--border-color);
-  background: var(--panel-bg);
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  color: var(--muted-text-color);
-  user-select: none;
-  transition: background 0.1s, color 0.1s, border-color 0.1s;
-}
 
 .kind_checkbox:checked + label {
   background: var(--code-bg);
@@ -839,34 +616,21 @@ pre.shiki code {
   border-color: var(--border-strong);
 }
 
-#search_results {
-  width: 100%;
-  max-width: 54rem;
-}
-
 #search_results[state='done']:empty::before,
 #autocomplete_results[state='done']:empty::before {
   content: '(no results)';
   color: var(--muted-text-color);
   font-style: italic;
+  padding: 0.5rem;
+  display: block;
 }
 
 #search_results[state='loading']:empty::before {
   content: 'searching...';
   color: var(--muted-text-color);
   font-style: italic;
-}
-
-#autocomplete_results {
-  position: absolute;
-  top: calc(var(--header-height) - 1px);
-  right: 0;
-  width: min(26rem, 92vw);
-  max-height: min(70vh, 40rem);
-  overflow: auto;
-  border: 1px solid var(--border-color);
-  background: var(--body-bg);
-  z-index: 30;
+  padding: 0.5rem;
+  display: block;
 }
 
 #autocomplete_results:empty {
@@ -889,111 +653,12 @@ pre.shiki code {
   contain-intrinsic-size: auto 50em;
 }
 
-.search_result_block_inner {
-  display: table;
-  width: 100%;
-}
-
-.search_result {
-  display: table-row;
-}
-
-.result_link,
-.result_doc {
-  display: table-cell;
-  padding: 0.42rem 0.62rem;
-  border-bottom: 1px solid var(--border-color);
-  word-break: break-word;
-  line-height: 1.5;
-}
-
-.result_link {
-  font-family: var(--font-mono);
-  font-size: 0.91rem;
-}
-
-.result_link a {
-  color: var(--link-color);
-}
-
-.result_link a:hover {
-  text-decoration: underline;
-}
-
-#search_results .search_result:first-child .result_link {
-  border-top: 1px solid var(--border-color);
-}
-
-.result_kind {
-  display: inline-block;
-  min-width: 4.8em;
-  margin-right: 0.55em;
-  padding: 0.06em 0.38em;
-  border: 1px solid var(--border-color);
-  background: var(--code-bg);
-  font-size: 0.82em;
-  text-align: center;
-  color: var(--muted-text-color);
-  vertical-align: baseline;
-  cursor: pointer;
-}
-
-.result_kind:hover {
-  border-color: var(--border-strong);
-  color: var(--text-color);
-}
-
-.result_name {
-  color: var(--link-color);
-}
-
-.result_type {
-  color: var(--muted-text-color);
-  font-size: 0.92em;
-  word-break: break-word;
-}
-
 .result_type_link {
   color: var(--link-color);
 }
 
 .result_type_link:hover {
   text-decoration: underline;
-}
-
-#autocomplete_results .search_result_block_inner {
-  display: block;
-}
-
-#autocomplete_results .search_result {
-  display: block;
-}
-
-#autocomplete_results .result_link {
-  display: flex;
-  align-items: baseline;
-  padding: 0.35rem 0.55rem;
-}
-
-#autocomplete_results .result_type {
-  display: none;
-}
-
-#autocomplete_results .result_kind {
-  order: 1;
-  margin-left: auto;
-  margin-right: 0;
-  flex-shrink: 0;
-  font-size: 0.78em;
-  min-width: 4.2em;
-  cursor: default;
-}
-
-#autocomplete_results .result_link a {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: inherit;
 }
 
 #autocomplete_results .selected {

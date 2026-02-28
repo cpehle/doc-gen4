@@ -4,24 +4,56 @@ function getTheme() {
 
 function setTheme(themeName) {
     localStorage.setItem('theme', themeName);
-    if (themeName == "system") {
-        themeName = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    const isDark = themeName === "dark" || (themeName === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.setAttribute('data-theme', isDark ? "dark" : "light");
+    
+    // Update toggle icons if they exist
+    const darkIcon = document.getElementById('theme-toggle-dark-icon');
+    const lightIcon = document.getElementById('theme-toggle-light-icon');
+    
+    if (darkIcon && lightIcon) {
+        if (isDark) {
+            darkIcon.classList.remove('hidden');
+            lightIcon.classList.add('hidden');
+        } else {
+            lightIcon.classList.remove('hidden');
+            darkIcon.classList.add('hidden');
+        }
     }
-    document.documentElement.setAttribute('data-theme', themeName);
 }
 
-setTheme(getTheme())
+// Initial setup
+setTheme(getTheme());
 
 document.addEventListener("DOMContentLoaded", function() {
-    document.querySelectorAll("#color-theme-switcher input").forEach((input) => {
-        if (input.value == getTheme()) {
-            input.checked = true;
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    
+    function toggleTheme() {
+        const currentTheme = getTheme();
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        
+        // Toggle logic: If currently system, explicitize it. Then flip.
+        let isCurrentlyDark = currentTheme === "dark" || (currentTheme === "system" && prefersDark);
+        
+        setTheme(isCurrentlyDark ? "light" : "dark");
+    }
+
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', toggleTheme);
+    }
+
+    // Global shortcut to toggle theme (Cmd+T or Ctrl+T)
+    document.addEventListener("keydown", (ev) => {
+        if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 't') {
+            ev.preventDefault();
+            toggleTheme();
         }
-        input.addEventListener('change', e => setTheme(e.target.value));
     });
 
-    // also check to see if the user changes their theme settings while the page is loaded.
+    // also check to see if the user changes their system theme settings while the page is loaded.
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-        setTheme(getTheme());
-    })
+        if (getTheme() === "system") {
+            setTheme("system");
+        }
+    });
 });
