@@ -1,0 +1,28 @@
+{
+  "name": "doc-gen4",
+  "version": "1.0.0",
+  "description": "Document Generator for Lean 4",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:ui": "playwright test",
+    "test:ui:debug": "playwright test --debug",
+    "postinstall": "playwright install chromium --with-deps"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leanprover/doc-gen4.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/leanprover/doc-gen4/issues"
+  },
+  "homepage": "https://github.com/leanprover/doc-gen4#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "http-server": "^14.1.1"
+  }
+}

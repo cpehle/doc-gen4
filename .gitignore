@@ -6,3 +6,4 @@ static/BerkeleyMonoVariable.woff2
 
 .gemini/
 gha-creds-*.json
+\n# Playwright\nplaywright-report/\ntest-results/\nnode_modules/
