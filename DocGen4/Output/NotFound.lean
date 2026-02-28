@@ -16,10 +16,10 @@ Render the 404 page.
 -/
 def notFound : BaseHtmlM Html := do templateExtends (baseHtml "404") <|
   pure <|
-    <main>
-      <h1>404 Not Found</h1>
-      <p> Unfortunately, the page you were looking for is no longer here. </p>
-      <div id="howabout"></div>
+    <main class="ph3 mv4 flex-auto" style="max-width: var(--content-width);">
+      <h1 class="f2 fw6 ma0 mb3">404 Not Found</h1>
+      <p class="f5 lh-copy slate"> Unfortunately, the page you were looking for is no longer here. </p>
+      <div id="howabout" class="mt4 slate"></div>
     </main>
 
 end Output

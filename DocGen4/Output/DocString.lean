@@ -259,7 +259,7 @@ partial def renderText (t : MD4Lean.Text) (funName : String) (inLink : Bool := f
         pure #[Html.text (String.join ss.toList)]
       else
         autoLinkInline ss
-    return #[Html.element "code" true #[] inner]
+    return #[Html.element "code" true #[("class", "bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded-sm")] inner]
   -- Math is rendered with dollar signs because MathJax will later render them
   | .latexMath ss =>
     let content := String.join ss.toList
@@ -288,29 +288,34 @@ partial def renderBlock (block : MD4Lean.Block) (funName : String) (tight : Bool
     if tight then
       return inner
     else
-      return #[Html.element "p" true #[] inner]
+      return #[Html.element "p" true #[("class", "leading-relaxed text-[var(--muted-text-color)] my-3")] inner]
   | .ul isTight _mark items =>
     let mut lis : Array Html := #[]
     for item in items do
       let liHtml ← renderLi item funName isTight
       lis := lis ++ liHtml
-    return #[Html.element "ul" true #[] lis]
+    return #[Html.element "ul" true #[("class", "list-disc pl-6 my-3 text-[var(--muted-text-color)] space-y-1")] lis]
   | .ol isTight start _mark items =>
     let mut lis : Array Html := #[]
     for item in items do
       let liHtml ← renderLi item funName isTight
       lis := lis ++ liHtml
-    let attrs : Array (String × String) :=
-      if start != 1 then #[("start", toString start)] else #[]
+    let mut attrs : Array (String × String) := #[("class", "list-decimal pl-6 my-3 text-[var(--muted-text-color)] space-y-1")]
+    if start != 1 then attrs := attrs.push ("start", toString start)
     return #[Html.element "ol" true attrs lis]
-  | .hr => return #[Html.raw "<hr>\n"]
+  | .hr => return #[Html.raw "<hr class=\"border-t border-[var(--border-color)] my-8\">\n"]
   | .header level texts =>
     let id := mdGetHeadingId texts
     let inner ← renderTexts texts funName
-    let anchor := Html.element "a" true #[("class", "hover-link"), ("href", s!"#{id}")] #[Html.text "#"]
+    let anchor := Html.element "a" true #[("class", "opacity-0 group-hover:opacity-100 transition-opacity no-underline text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 ml-2 font-normal"), ("href", s!"#{id}"), ("title", "Direct link to this section")] #[Html.text "#"]
     let children := inner.push (Html.text " ") |>.push anchor
     let tag := s!"h{level}"
-    return #[Html.element tag true #[("id", id), ("class", "markdown-heading")] children]
+    let headerClass := match level with
+      | 1 => "text-3xl font-bold mt-10 mb-6 text-[var(--text-color)] group flex items-center"
+      | 2 => "text-2xl font-bold mt-8 mb-4 text-[var(--text-color)] group flex items-center"
+      | 3 => "text-xl font-bold mt-6 mb-3 text-[var(--text-color)] group flex items-center"
+      | _ => "text-lg font-bold mt-4 mb-2 text-[var(--text-color)] group flex items-center"
+    return #[Html.element tag true #[("id", id), ("class", s!"markdown-heading {headerClass}")] children]
   | .code _info lang _fenceChar content =>
     let langStr := attrTextToString lang
     let codeAttrs : Array (String × String) :=
@@ -321,19 +326,19 @@ partial def renderBlock (block : MD4Lean.Block) (funName : String) (tight : Bool
       else
         pure #[Html.text (String.join content.toList)]
     let codeElem := Html.element "code" true codeAttrs inner
-    return #[Html.element "pre" true #[] #[codeElem]]
+    return #[Html.element "pre" true #[("class", "p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded border border-[var(--border-color)] my-4 overflow-x-auto")] #[codeElem]]
   | .html content =>
     return #[Html.raw (String.join content.toList)]
   | .blockquote blocks =>
     let mut inner : Array Html := #[]
     for b in blocks do
       inner := inner ++ (← renderBlock b funName)
-    return #[Html.element "blockquote" true #[] inner]
+    return #[Html.element "blockquote" true #[("class", "border-l-4 border-neutral-200 dark:border-neutral-700 pl-4 my-6 italic text-[var(--muted-text-color)]")] inner]
   | .table head body =>
     let mut headCells : Array Html := #[]
     for cell in head do
       let cellHtml ← renderTexts cell funName
-      headCells := headCells.push (Html.element "th" true #[] cellHtml)
+      headCells := headCells.push (Html.element "th" true #[("class", "font-bold border-b border-neutral-200 dark:border-neutral-700 text-left p-3 bg-neutral-50/50 dark:bg-neutral-800/50")] cellHtml)
     let headRow := Html.element "tr" true #[] headCells
     let thead := Html.element "thead" true #[] #[headRow]
     let mut bodyRows : Array Html := #[]
@@ -341,10 +346,10 @@ partial def renderBlock (block : MD4Lean.Block) (funName : String) (tight : Bool
       let mut rowCells : Array Html := #[]
       for cell in row do
         let cellHtml ← renderTexts cell funName
-        rowCells := rowCells.push (Html.element "td" true #[] cellHtml)
+        rowCells := rowCells.push (Html.element "td" true #[("class", "border-b border-[var(--border-color)] p-3")] cellHtml)
       bodyRows := bodyRows.push (Html.element "tr" true #[] rowCells)
     let tbody := Html.element "tbody" true #[] bodyRows
-    return #[Html.element "table" true #[] #[thead, tbody]]
+    return #[Html.element "table" true #[("class", "text-sm w-full border-collapse my-6")] #[thead, tbody]]
 
 /-- Render a list item to HTML. -/
 partial def renderLi (li : MD4Lean.Li MD4Lean.Block) (funName : String) (tight : Bool) : HtmlM (Array Html) := do
@@ -352,12 +357,13 @@ partial def renderLi (li : MD4Lean.Li MD4Lean.Block) (funName : String) (tight :
   if li.isTask then
     let checked := li.taskChar == some 'x' || li.taskChar == some 'X'
     if checked then
-      inner := inner.push (Html.raw "<input type=\"checkbox\" checked=\"\" disabled=\"\">")
+      inner := inner.push (Html.raw "<input type=\"checkbox\" checked=\"\" disabled=\"\" class=\"mr-2 h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500\">")
     else
-      inner := inner.push (Html.raw "<input type=\"checkbox\" disabled=\"\">")
+      inner := inner.push (Html.raw "<input type=\"checkbox\" disabled=\"\" class=\"mr-2 h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500\">")
   for b in li.contents do
     inner := inner ++ (← renderBlock b funName tight)
-  return #[Html.element "li" true #[] inner]
+  return #[Html.element "li" true #[("class", "leading-relaxed")] inner]
+
 
 end
 

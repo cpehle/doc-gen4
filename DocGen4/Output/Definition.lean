@@ -12,7 +12,7 @@ open Lean Widget
 def equationLimit : Nat := 200
 
 def equationToHtml (c : CodeWithInfos) : HtmlM Html := do
-  return <li class="equation">[← infoFormatToHtml c]</li>
+  return <li class="equation mb-1 list-none text-[var(--muted-text-color)]">[← infoFormatToHtml c]</li>
 
 /--
 Attempt to render all `simp` equations for this definition. At a size
@@ -24,25 +24,21 @@ def equationsToHtml (i : Process.DefinitionInfo) : HtmlM (Array Html) := do
   if let some eqs := i.equations then
     let equationsHtml ← eqs.mapM equationToHtml
     let filteredEquationsHtml := equationsHtml.filter (·.textLength < equationLimit)
-    if equationsHtml.size ≠ filteredEquationsHtml.size then
-      return #[
-        <details>
-          <summary>Equations</summary>
-          <ul class="equations">
-            <li class="equation">One or more equations did not get rendered due to their size.</li>
-            [filteredEquationsHtml]
-          </ul>
-        </details>
-      ]
+    let body := if equationsHtml.size ≠ filteredEquationsHtml.size then
+      #[<li class="mb-1 list-none text-xs text-[var(--muted-text-color)] italic">One or more equations did not get rendered due to their size.</li>] ++ filteredEquationsHtml
     else
-      return #[
-        <details>
-          <summary>Equations</summary>
-          <ul class="equations">
-            [filteredEquationsHtml]
-          </ul>
-        </details>
-      ]
+      filteredEquationsHtml
+    return #[
+      <details class="mt-4">
+        <summary class="w-full cursor-pointer font-bold text-xs uppercase tracking-widest text-[var(--muted-text-color)] hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors flex justify-between items-center list-none [&::-webkit-details-marker]:hidden">
+          Equations
+          {.raw "<svg class=\"chevron w-5 h-5 \" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M9 5l7 7-7 7\"></path></svg>"}
+        </summary>
+        <ul class="list-none p-0 pl-4 mt-3 space-y-1 border-l-2 border-[var(--border-color)] ml-2">
+          [body]
+        </ul>
+      </details>
+    ]
   else
     return #[]
 
