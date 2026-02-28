@@ -89,8 +89,16 @@ structure JsonIndexedModule where
   url : String
   deriving FromJson, ToJson
 
+structure JsonIndexedDocumentInfo where
+  title : String
+  kind : String
+  docLink : String
+  previewText : String
+  deriving FromJson, ToJson
+
 structure JsonIndex where
   declarations : List (String × JsonIndexedDeclarationInfo) := []
+  documents : List (String × JsonIndexedDocumentInfo) := []
   instances : Std.HashMap String (RBTree String Ord.compare) := ∅
   modules : Std.HashMap String JsonIndexedModule := ∅
   instancesFor : Std.HashMap String (RBTree String Ord.compare) := ∅
@@ -101,11 +109,13 @@ instance : ToJson JsonHeaderIndex where
 instance : ToJson JsonIndex where
   toJson idx := Id.run do
     let jsonDecls := Json.mkObj <| idx.declarations.map (fun (k, v) => (k, toJson v))
+    let jsonDocs := Json.mkObj <| idx.documents.map (fun (k, v) => (k, toJson v))
     let jsonInstances := Json.mkObj <| idx.instances.toList.map (fun (k, v) => (k, toJson v.toArray))
     let jsonModules := Json.mkObj <| idx.modules.toList.map (fun (k, v) => (k, toJson v))
     let jsonInstancesFor := Json.mkObj <| idx.instancesFor.toList.map (fun (k, v) => (k, toJson v.toArray))
     let finalJson := Json.mkObj [
       ("declarations", jsonDecls),
+      ("documents", jsonDocs),
       ("instances", jsonInstances),
       ("modules", jsonModules),
       ("instancesFor", jsonInstancesFor)

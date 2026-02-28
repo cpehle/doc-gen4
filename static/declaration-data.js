@@ -85,7 +85,7 @@ export class DeclarationDataCenter {
       let decl = this.declarationData.declarations[pattern];
       return decl ? [decl] : [];
     } else {
-      return getMatches(this.declarationData.declarations, pattern, allowedKinds, maxResults);
+      return getMatches(this.declarationData, pattern, allowedKinds, maxResults);
     }
   }
 
@@ -169,34 +169,71 @@ function matchCaseSensitive(declName, lowerDeclName, pattern) {
   }
 }
 
-function getMatches(declarations, pattern, allowedKinds = undefined, maxResults = undefined) {
+function getMatches(data, pattern, allowedKinds = undefined, maxResults = undefined) {
   const lowerPats = pattern.toLowerCase().split(/\s/g);
   const patNoSpaces = pattern.replace(/\s/g, "");
   const results = [];
-  for (const [name, {
-    kind,
-    docLink,
-    typeSig,
-  }] of Object.entries(declarations)) {
-    // Apply "kind" filter
-    if (allowedKinds !== undefined) {
-      if (!allowedKinds.has(kind)) {
-        continue;
+  
+  if (data.declarations) {
+    for (const [name, {
+      kind,
+      docLink,
+      typeSig,
+    }] of Object.entries(data.declarations)) {
+      // Apply "kind" filter
+      if (allowedKinds !== undefined && allowedKinds.size > 0) {
+        if (!allowedKinds.has(kind)) {
+          continue;
+        }
+      }
+      const lowerName = name.toLowerCase();
+      let err = matchCaseSensitive(name, lowerName, patNoSpaces);
+      if (err !== undefined) {
+        results.push({
+          name,
+          kind,
+          err,
+          lowerName,
+          docLink,
+          typeSig,
+        });
       }
     }
-    const lowerName = name.toLowerCase();
-    let err = matchCaseSensitive(name, lowerName, patNoSpaces);
-    if (err !== undefined) {
-      results.push({
-        name,
-        kind,
-        err,
-        lowerName,
-        docLink,
-        typeSig,
-      });
+  }
+
+  if (data.documents) {
+    for (const [title, {
+      kind,
+      docLink,
+      previewText,
+    }] of Object.entries(data.documents)) {
+      if (allowedKinds !== undefined && allowedKinds.size > 0) {
+        if (!allowedKinds.has(kind)) {
+          continue;
+        }
+      }
+      const lowerTitle = title.toLowerCase();
+      let err = matchCaseSensitive(title, lowerTitle, patNoSpaces);
+      
+      if (err === undefined) {
+        if (previewText && previewText.toLowerCase().includes(pattern.toLowerCase())) {
+           err = 100; // Penality for body match instead of title
+        }
+      }
+
+      if (err !== undefined) {
+        results.push({
+          name: title,
+          kind,
+          err,
+          lowerName: lowerTitle,
+          docLink,
+          previewText,
+        });
+      }
     }
   }
+
   return results.sort(({ err: a }, { err: b }) => a - b).slice(0, maxResults);
 }
 
