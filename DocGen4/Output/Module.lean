@@ -40,13 +40,20 @@ Render the general header of a declaration containing its declaration type
 and name.
 -/
 def docInfoHeader (doc : DocInfo) : HtmlM Html := do
+  let kindColor := match doc.getKind with
+  | "def" | "instance" => "text-blue-500 dark:text-blue-400"
+  | "theorem" => "text-purple-500 dark:text-purple-400"
+  | "axiom" | "opaque" => "text-teal-500 dark:text-teal-400"
+  | "structure" | "inductive" | "class" => "text-yellow-600 dark:text-yellow-500"
+  | _ => "text-neutral-500 dark:text-neutral-400"
+
   let mut nodes := #[]
-  nodes := nodes.push <| Html.element "span" false #[("class", "decl_kind")] #[doc.getKindDescription]
+  nodes := nodes.push <| Html.element "span" false #[("class", s!"decl_kind mr-2 {kindColor}")] #[doc.getKindDescription]
   -- TODO: Can we inline if-then-else and avoid repeating <span> here?
   if doc.getSorried then
-    nodes := nodes.push <span class="decl_name" title="declaration uses 'sorry'"> {← declNameToHtmlBreakWithinLink doc.getName} </span>
+    nodes := nodes.push <span class="decl_name text-[var(--text-color)] cursor-help" style="text-decoration: underline wavy #b2871d;" title="declaration uses 'sorry'"> {← declNameToHtmlBreakWithinLink doc.getName} </span>
   else
-    nodes := nodes.push <span class="decl_name"> {← declNameToHtmlBreakWithinLink doc.getName} </span>
+    nodes := nodes.push <span class="decl_name text-[var(--text-color)]"> {← declNameToHtmlBreakWithinLink doc.getName} </span>
   for arg in doc.getArgs do
     nodes := nodes.push (← argToHtml arg)
 
@@ -55,9 +62,9 @@ def docInfoHeader (doc : DocInfo) : HtmlM Html := do
   | DocInfo.classInfo i => nodes := nodes.append (← structureInfoHeader i)
   | _ => nodes := nodes
 
-  nodes := nodes.push <| Html.element "span" true #[("class", "decl_args")] #[" : "]
-  nodes := nodes.push <span class="decl_type">[← infoFormatToHtml doc.getType]</span>
-  return <div class="decl_header"> [nodes] </div>
+  nodes := nodes.push <| Html.element "span" true #[("class", "decl_args text-neutral-500")] #[" : "]
+  nodes := nodes.push <span class="decl_type text-[var(--text-color)]">[← infoFormatToHtml doc.getType]</span>
+  return <div class="decl_header font-mono text-[0.92rem] leading-relaxed"> [nodes] </div>
 
 /--
 Render one token inside an attribute payload. If it looks like a fully-qualified
@@ -67,7 +74,7 @@ private def attrTokenToHtml (tok : String) : HtmlM Html := do
   if tok.contains "." then
     let name := String.toName tok
     if (← getResult).name2ModIdx.contains name then
-      return <a href={← declNameToLink name}>{tok}</a>
+      return <a class="text-blue-600 dark:text-blue-400 no-underline hover:underline" href={← declNameToLink name}>{tok}</a>
   return tok
 
 /--
@@ -94,7 +101,7 @@ private def attrsToHtml (attrs : Array String) : HtmlM Html := do
       nodes := nodes.push ", "
     nodes := nodes ++ (← attrPayloadToHtml attr)
   nodes := nodes.push "]"
-  return Html.element "div" false #[("class", "attributes")] nodes
+  return Html.element "div" false #[("class", "text-neutral-500 text-xs font-mono mb-2")] nodes
 
 /--
 The main entry point for rendering a single declaration inside a given module.
@@ -129,12 +136,18 @@ def docInfoToHtml (module : Name) (doc : DocInfo) : HtmlM Html := do
   -- custom decoration (e.g., verification badges from external tools)
   let decorator ← getDeclarationDecorator
   let decoratorHtml := decorator module doc.getName doc.getKind
-  let cssClass := "decl" ++ if doc.getSorried then " sorried" else ""
+  let kindColor := match doc.getKind with
+  | "def" | "instance" => " border-blue-500 dark:border-blue-400"
+  | "theorem" => " border-purple-500 dark:border-purple-400"
+  | "axiom" | "opaque" => " border-teal-500 dark:border-teal-400"
+  | "structure" | "inductive" | "class" => " border-yellow-600 dark:border-yellow-500"
+  | _ => " border-neutral-300 dark:border-neutral-700"
+  let cssClass := s!"decl border-l-[3px]{kindColor}" ++ if doc.getSorried then " sorried" else ""
   pure
     <div class={cssClass} id={doc.getName.toString}>
       <div class={doc.getKind}>
-        <div class="gh_link">
-          <a href={← getSourceUrl module doc.getDeclarationRange}>source</a>
+        <div class="float-right ml-4">
+          <a class="text-[10px] font-bold uppercase tracking-widest text-neutral-400 hover:text-neutral-900 dark:text-neutral-500 dark:hover:text-neutral-100 no-underline" href={← getSourceUrl module doc.getDeclarationRange}>source</a>
         </div>
         [decoratorHtml]
         [attrsHtml]
@@ -151,7 +164,7 @@ as HTML.
 -/
 def modDocToHtml (mdoc : ModuleDoc) : HtmlM Html := do
   pure
-    <div class="mod_doc">
+    <div class="mod_doc mb-8 text-[var(--text-color)] leading-relaxed">
       [← docStringToHtml mdoc.doc ""]
     </div>
 
@@ -165,17 +178,17 @@ def moduleMemberToHtml (module : Name) (member : ModuleMember) : HtmlM Html := d
   | ModuleMember.modDoc d => modDocToHtml d
 
 def declarationToNavLink (declName : Name) : Html :=
-  <div class="nav_link">
-    <a class="break_within" href={s!"#{declName.toString}"}>
+  <div class="nav_link mb-1">
+    <a class="no-underline text-blue-600 dark:text-blue-400 hover:underline break-all text-xs" href={s!"#{declName.toString}"}>
       [breakWithin declName.toString]
     </a>
   </div>
 
 def moduleViewToggle : Html :=
-  <div class="module_view_toggle" id="module_view_toggle">
-    <span class="module_view_toggle_label">Declarations</span>
-    <button class="module_view_toggle_button" id="module_view_source" type="button">declaration order</button>
-    <button class="module_view_toggle_button" id="module_view_kind" type="button">group by kind</button>
+  <div class="module_view_toggle flex items-center mb-6 text-xs text-[var(--muted-text-color)]" id="module_view_toggle">
+    <span class="module_view_toggle_label uppercase tracking-widest mr-3">Declarations</span>
+    <button class="module_view_toggle_button border border-neutral-200 dark:border-neutral-700 bg-[var(--panel-bg)] pointer px-2 py-1 mr-2 rounded hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors" id="module_view_source" type="button">declaration order</button>
+    <button class="module_view_toggle_button border border-neutral-200 dark:border-neutral-700 bg-[var(--panel-bg)] pointer px-2 py-1 rounded hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors" id="module_view_kind" type="button">group by kind</button>
   </div>
 
 /--
@@ -191,29 +204,35 @@ and return the HTML.
 -/
 def importsHtml (moduleName : Name) : HtmlM (Array Html) := do
   let imports := (← getImports moduleName).qsort Name.lt
-  imports.mapM (fun i => do return <li>{← moduleToHtmlLink i}</li>)
+  imports.mapM (fun i => do return <li class="mb-1 text-xs">{← moduleToHtmlLink i}</li>)
 
 /--
 Render the internal nav bar (the thing on the right on all module pages).
 -/
 def internalNav (members : Array Name) (moduleName : Name) : HtmlM Html := do
   pure
-    <nav class="internal_nav">
-      <p><a href="#top">return to top</a></p>
-      <p class="gh_nav_link"><a href={← getSourceUrl moduleName none}>source</a></p>
-      <div class="imports">
-        <details>
-          <summary>Imports</summary>
-          <ul>
+    <nav class="internal_nav flex-shrink-0 sticky h-[calc(100vh-2.9rem)] top-[2.9rem] border-l border-[var(--border-color)] bg-[var(--body-bg)] text-[var(--text-color)] px-4 py-6 overflow-auto text-sm leading-relaxed" style="width: clamp(15rem, 19vw, 21rem);">
+      <p class="m-0 mb-3"><a class="no-underline text-blue-600 dark:text-blue-400 hover:underline font-medium" href="#top">Return to top</a></p>
+      <p class="gh_nav_link m-0 mb-6"><a class="no-underline text-[var(--muted-text-color)] hover:text-neutral-900 dark:hover:text-neutral-100 text-[10px] uppercase tracking-wider" href={← getSourceUrl moduleName none}>Source</a></p>
+      <div class="imports mb-6">
+        <details class="mb-3 group">
+          <summary class="w-full cursor-pointer font-bold uppercase tracking-widest text-[10px] text-[var(--muted-text-color)] mb-2 flex justify-between items-center list-none [&::-webkit-details-marker]:hidden">
+            <span>Imports</span>
+            {.raw "<svg class=\"chevron w-5 h-5 \" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M9 5l7 7-7 7\"></path></svg>"}
+          </summary>
+          <ul class="list-none p-0 pl-3 m-0 border-l border-[var(--border-color)]">
             [← importsHtml moduleName]
           </ul>
         </details>
-        <details>
-          <summary>Imported by</summary>
-          <ul id={s!"imported-by-{moduleName}"} class="imported-by-list"> </ul>
+        <details class="mb-3 group">
+          <summary class="w-full cursor-pointer font-bold uppercase tracking-widest text-[10px] text-[var(--muted-text-color)] mb-2 flex justify-between items-center list-none [&::-webkit-details-marker]:hidden">
+            <span>Imported by</span>
+            {.raw "<svg class=\"chevron w-5 h-5 \" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M9 5l7 7-7 7\"></path></svg>"}
+          </summary>
+          <ul id={s!"imported-by-{moduleName}"} class="imported-by-list list-none p-0 pl-3 m-0 border-l border-[var(--border-color)] text-xs"> </ul>
         </details>
       </div>
-      <div class="internal_nav_decls">
+      <div class="internal_nav_decls mt-4 pt-4 border-t border-[var(--border-color)]">
         [members.map declarationToNavLink]
       </div>
     </nav>
@@ -226,8 +245,8 @@ def moduleToHtml (module : Process.Module) : HtmlM Html := withTheReader SiteBas
   let memberDocs ← relevantMembers.mapM (moduleMemberToHtml module.name)
   let memberNames := filterDocInfo relevantMembers |>.map DocInfo.getName
   templateLiftExtends (baseHtmlGenerator module.name.toString) <| pure #[
-    ← internalNav memberNames module.name,
-    Html.element "main" false #[] <| #[moduleViewToggle] ++ memberDocs
+    Html.element "main" true #[("class", "px-6 py-8 flex-auto min-w-0 bg-[var(--body-bg)] text-[var(--text-color)] text-[var(--text-color)]"), ("style", "max-width: var(--content-width);")] <| #[moduleViewToggle] ++ memberDocs,
+    ← internalNav memberNames module.name
   ]
 
 end Output

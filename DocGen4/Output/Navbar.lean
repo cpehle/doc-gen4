@@ -14,16 +14,18 @@ open Lean
 open scoped DocGen4.Jsx
 
 def moduleListFile (file : Name) : BaseHtmlM Html := do
-  return <div class={if (← getCurrentName) == file then "nav_link visible" else "nav_link"}>
-    <a href={← moduleNameToLink file}>{file.getString!}</a>
+  let isCurrent := (← getCurrentName) == file
+  let className := if isCurrent then "mb-1 font-semibold text-[var(--text-color)] bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded" else "mb-1 text-[var(--muted-text-color)] hover:text-neutral-900 dark:hover:text-neutral-100 px-2 py-1 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all"
+  return <div class={className}>
+    <a class="no-underline block w-full" href={← moduleNameToLink file}>{file.getString!}</a>
   </div>
 
 def bookNavLink (entry : BookNavEntry) : BaseHtmlM Html := do
   let isCurrent := (← getCurrentPage) == some entry.href
-  let className := if isCurrent then "nav_link visible book_nav_link" else "nav_link book_nav_link"
+  let className := if isCurrent then "mb-1 font-semibold text-[var(--text-color)] bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded" else "mb-1 text-[var(--muted-text-color)] hover:text-neutral-900 dark:hover:text-neutral-100 px-2 py-1 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all"
   let indentRem := entry.level + 1
-  return <div class={className} style={s!"padding-left: {indentRem}rem"}>
-    <a href={s!"{← getRoot}{entry.href}"}>{entry.title}</a>
+  return <div class={className} style={s!"margin-left: {indentRem}rem"}>
+    <a class="no-underline block w-full" href={s!"{← getRoot}{entry.href}"}>{entry.title}</a>
   </div>
 
 /--
@@ -39,19 +41,21 @@ partial def moduleListDir (h : Hierarchy) : BaseHtmlM Html := do
   let moduleLink ← moduleNameToLink h.getName
   let label : Html ← do
     if h.isFile then
-      pure <a class="nav_label_link" href={moduleLink}>{h.getName.getString!}</a>
+      pure <a class="no-underline text-inherit hover:text-neutral-900 dark:hover:text-neutral-100 flex-auto px-1" href={moduleLink}>{h.getName.getString!}</a>
     else
-      pure <span class="nav_label_text">{h.getName.getString!}</span>
+      pure <span class="text-[var(--muted-text-color)] flex-auto px-1">{h.getName.getString!}</span>
   let summary :=
-    <summary class="nav_summary">
-      <button class="nav_toggle_button" type="button" "aria-label"={s!"toggle {h.getName.getString!}"}></button>
+    <summary class="w-full list-none flex items-center justify-between cursor-pointer hover:text-neutral-900 dark:hover:text-neutral-100 text-[var(--muted-text-color)] px-1 py-1 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all [&::-webkit-details-marker]:hidden">
       {label}
+      {.raw "<svg class=\"chevron w-4 h-4 ml-2 \" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M9 5l7 7-7 7\"></path></svg>"}
     </summary>
   pure
-    <details class="nav_sect" "data-path"={moduleLink} [if (← getCurrentName).any (h.getName.isPrefixOf ·) then #[("open", "")] else #[]]>
+    <details class="ml-2 group" "data-path"={moduleLink} [if (← getCurrentName).any (h.getName.isPrefixOf ·) then #[("open", "")] else #[]]>
       {summary}
-      [dirNodes]
-      [fileNodes]
+      <div class="border-l border-[var(--border-color)] ml-2 pl-1 mt-1 mb-2">
+        [dirNodes]
+        [fileNodes]
+      </div>
     </details>
 
 /--
@@ -62,7 +66,7 @@ def moduleList : BaseHtmlM Html := do
   let mut list := Array.empty
   for (_, cs) in hierarchy.getChildren do
     list := list.push <| ← moduleListDir cs
-  return <div class="module_list">[list]</div>
+  return <div class="module_list mt2">[list]</div>
 
 /--
 Return the inner navigation content (static page links, module tree, settings)
@@ -70,37 +74,29 @@ without any HTML/head/body wrapper. Intended to be inlined directly into the pag
 -/
 def navContent : BaseHtmlM Html := do
   let mut staticPages : Array Html := #[
-    <div class="nav_link"><a href={s!"{← getRoot}"}>index</a></div>,
-    <div class="nav_link"><a href={s!"{← getRoot}foundational_types.html"}>foundational types</a></div>,
-    <div class="nav_link"><a href={s!"{← getRoot}tactics.html"}>tactics</a></div>,
+    <div class="mb-1 px-2 py-1 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all"><a class="no-underline text-[var(--muted-text-color)] hover:text-neutral-900 dark:hover:text-neutral-100 block w-full" href={s!"{← getRoot}"}>Index</a></div>,
+    <div class="mb-1 px-2 py-1 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all"><a class="no-underline text-[var(--muted-text-color)] hover:text-neutral-900 dark:hover:text-neutral-100 block w-full" href={s!"{← getRoot}foundational_types.html"}>Foundational Types</a></div>,
+    <div class="mb-1 px-2 py-1 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all"><a class="no-underline text-[var(--muted-text-color)] hover:text-neutral-900 dark:hover:text-neutral-100 block w-full" href={s!"{← getRoot}tactics.html"}>Tactics</a></div>,
   ]
   let config ← read
   if not config.refs.isEmpty then
-    staticPages := staticPages.push <div class="nav_link"><a href={s!"{← getRoot}references.html"}>references</a></div>
+    staticPages := staticPages.push <div class="mb-1 px-2 py-1 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all"><a class="no-underline text-[var(--muted-text-color)] hover:text-neutral-900 dark:hover:text-neutral-100 block w-full" href={s!"{← getRoot}references.html"}>References</a></div>
   let bookPages ← config.bookNav.mapM bookNavLink
   let bookSection : Array Html :=
     if bookPages.isEmpty then
       #[]
     else
-      #[<h3>{config.bookNavLabel}</h3>] ++ bookPages
+      #[<h3 class="text-[10px] font-bold uppercase tracking-widest text-[var(--muted-text-color)] mt-6 mb-2 px-2"> {config.bookNavLabel} </h3>] ++ bookPages
   pure
-    <nav class="nav">
-      <h3>General documentation</h3>
-      [staticPages]
+    <nav class="nav flex-shrink-0 sticky h-[calc(100vh-2.9rem)] top-[2.9rem] border-r border-[var(--border-color)] bg-[var(--body-bg)] text-[var(--text-color)] px-4 py-6 overflow-auto text-sm leading-relaxed shadow-1" style="width: clamp(17.5rem, 20vw, 23rem);">
+      <h3 class="text-[10px] font-bold uppercase tracking-widest text-[var(--muted-text-color)] mt-0 mb-2 px-2"> General </h3>
+      <div class="mb-6">
+        [staticPages]
+      </div>
       [bookSection]
-      <h3>Library</h3>
-      {← moduleList}
-      <div id="settings">
-        -- `input` is a void tag, but can be self-closed to make parsing easier.
-        <h3>Color scheme</h3>
-        <form id="color-theme-switcher">
-            <label for="color-theme-dark">
-                <input type="radio" name="color_theme" id="color-theme-dark" value="dark" autocomplete="off"/>dark</label>
-            <label for="color-theme-system" title="Match system theme settings">
-                <input type="radio" name="color_theme" id="color-theme-system" value="system" autocomplete="off"/>system</label>
-            <label for="color-theme-light">
-                <input type="radio" name="color_theme" id="color-theme-light" value="light" autocomplete="off"/>light</label>
-        </form>
+      <h3 class="text-[10px] font-bold uppercase tracking-widest text-[var(--muted-text-color)] mt-6 mb-2 px-2"> Library </h3>
+      <div class="mb-6">
+        {← moduleList}
       </div>
     </nav>
 
