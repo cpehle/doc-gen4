@@ -95,10 +95,17 @@ def baseHtmlGenerator (title : String) (site : Array Html) : BaseHtmlM Html := d
                           </div>
                         </div>
 
-                        <div class="flex flex-col xl:flex-row pt-[2.9rem] min-h-screen bg-[var(--body-bg)] text-[var(--text-color)]">
-                          <label for="nav_toggle" class="nav-overlay fixed inset-0 z-40 hidden bg-neutral-900/50 backdrop-blur-sm xl:hidden"></label>
-                          {.raw "<!-- NAV_START --><nav class=\"nav\"></nav><!-- NAV_END -->"}
-                          [site]
+                        <div class="flex flex-col min-h-screen pt-[2.9rem] bg-[var(--body-bg)] text-[var(--text-color)]">
+                          <div class="flex flex-col xl:flex-row flex-auto">
+                            <label for="nav_toggle" class="nav-overlay fixed inset-0 z-40 hidden bg-neutral-900/50 backdrop-blur-sm xl:hidden"></label>
+                            {.raw "<!-- NAV_START --><nav class=\"nav\"></nav><!-- NAV_END -->"}
+                            <div class="flex flex-col xl:flex-row flex-auto min-w-0">
+                              [site]
+                            </div>
+                          </div>
+                          <footer class="flex-shrink-0 py-8 text-center text-sm text-[var(--muted-text-color)] border-t border-[var(--border-color)] bg-[var(--body-bg)]">
+                            Powered by <a href="https://github.com/leanprover/doc-gen4" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">doc-gen4</a>
+                          </footer>
                         </div>
                       </body>
                     </html>
