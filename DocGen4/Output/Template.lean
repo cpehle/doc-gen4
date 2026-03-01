@@ -80,6 +80,18 @@ def baseHtmlGenerator (title : String) (site : Array Html) : BaseHtmlM Html := d
                               <input class="w-full bg-transparent pl-12 pr-4 py-4 text-[var(--text-color)] text-lg focus:outline-none placeholder-neutral-400 dark:placeholder-neutral-500" type="text" name="q" autocomplete="off" placeholder="Search declarations..."/>
                             </form>
                             <div id="autocomplete_results" class="overflow-auto flex-auto bg-[var(--body-bg)] text-[var(--text-color)]"></div>
+                            <div class="hidden sm:flex flex-shrink-0 items-center bg-neutral-50 dark:bg-neutral-800/50 border-t border-[var(--border-color)] px-4 py-3 text-xs text-[var(--muted-text-color)]">
+                              <span class="flex items-center mr-4">
+                                <kbd class="font-sans font-medium border border-[var(--border-color)] bg-[var(--body-bg)] text-[var(--text-color)] rounded-sm px-1.5 py-0.5 mr-1.5 shadow-sm">{.raw "&#x21B5;"}</kbd> {.text "to select"}
+                              </span>
+                              <span class="flex items-center mr-4">
+                                <kbd class="font-sans font-medium border border-[var(--border-color)] bg-[var(--body-bg)] text-[var(--text-color)] rounded-sm px-1.5 py-0.5 mr-1 shadow-sm">{.raw "&uarr;"}</kbd>
+                                <kbd class="font-sans font-medium border border-[var(--border-color)] bg-[var(--body-bg)] text-[var(--text-color)] rounded-sm px-1.5 py-0.5 mr-1.5 shadow-sm">{.raw "&darr;"}</kbd> {.text "to navigate"}
+                              </span>
+                              <span class="flex items-center">
+                                <kbd class="font-sans font-medium border border-[var(--border-color)] bg-[var(--body-bg)] text-[var(--text-color)] rounded-sm px-1.5 py-0.5 mr-1.5 shadow-sm">esc</kbd> {.text "to close"}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
