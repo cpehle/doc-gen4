@@ -817,12 +817,21 @@ main h6 {
 }
 
 /* Responsive Sidebar Toggle */
+@media (max-width: 1279px) {
+  nav.nav {
+    z-index: 60 !important;
+  }
+  .nav-overlay {
+    z-index: 50 !important;
+  }
+}
+
 #nav_toggle:checked ~ div nav.nav {
   transform: translateX(0) !important;
   display: block !important;
 }
 
-#nav_toggle:checked ~ div label[for="nav_toggle"] {
+#nav_toggle:checked ~ div .nav-overlay {
   display: block !important;
 }
 

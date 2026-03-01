@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Responsive Sidebar', () => {
   test('should toggle sidebar visibility at 1280px (xl breakpoint)', async ({ page }) => {
     // Navigate to a sample page
-    await page.goto('/Lean/Structure.html');
+    await page.goto('/DocGen4/Output/Template.html');
 
     // --- Desktop View (Wide: 1440px) ---
     await page.setViewportSize({ width: 1440, height: 900 });

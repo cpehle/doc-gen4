@@ -57,10 +57,10 @@
     }
 
     const declarationsByKind = groupByKind(declarationNodes, (decl) => declarationKinds.get(decl) || "other");
-    const internalNavDecls = document.querySelector(".internal_nav_decls");
+    const internalNavDeclsElements = Array.from(document.querySelectorAll(".internal_nav_decls"));
     const originalNavLinks =
-      internalNavDecls instanceof HTMLElement
-        ? Array.from(internalNavDecls.children).filter(
+      internalNavDeclsElements.length > 0
+        ? Array.from(internalNavDeclsElements[0].children).filter(
             (node) => node instanceof HTMLElement && node.classList.contains("nav_link")
           )
         : [];
@@ -169,46 +169,51 @@
     }
 
     function renderNav(order) {
-      if (!(internalNavDecls instanceof HTMLElement) || originalNavLinks.length === 0) {
+      if (internalNavDeclsElements.length === 0 || originalNavLinks.length === 0) {
         return;
       }
-      if (order !== ORDER_KIND) {
-        replaceElementChildren(internalNavDecls, originalNavLinks);
-        return;
-      }
-
-      const groupedLinks = [];
-      for (const kind of orderedKinds) {
-        const links = navLinksByKind.get(kind);
-        if (links && links.length > 0) {
-          const details = document.createElement("details");
-          details.className = "mb-3 group";
-          details.open = true;
-
-          const summary = document.createElement("summary");
-          summary.className = "w-full cursor-pointer font-bold uppercase tracking-widest text-[10px] mb-2 flex justify-between items-center list-none [&::-webkit-details-marker]:hidden";
-          
-          const labelSpan = document.createElement("span");
-          labelSpan.className = getKindColorClass(kind);
-          labelSpan.textContent = kindLabel(kind);
-          summary.appendChild(labelSpan);
-          
-          const svgHtml = '<svg class="chevron w-4 h-4 text-[var(--muted-text-color)] " fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
-          summary.insertAdjacentHTML('beforeend', svgHtml);
-          
-          details.appendChild(summary);
-
-          const ul = document.createElement("ul");
-          ul.className = "list-none p-0 pl-2 m-0 border-l border-[var(--border-color)]";
-          for (const link of links) {
-            ul.appendChild(link);
-          }
-          details.appendChild(ul);
-          
-          groupedLinks.push(details);
+      
+      for (const internalNavDecls of internalNavDeclsElements) {
+        if (order !== ORDER_KIND) {
+          // Clone the original links for each container
+          const clonedLinks = originalNavLinks.map(link => link.cloneNode(true));
+          replaceElementChildren(internalNavDecls, clonedLinks);
+          continue;
         }
+
+        const groupedLinks = [];
+        for (const kind of orderedKinds) {
+          const links = navLinksByKind.get(kind);
+          if (links && links.length > 0) {
+            const details = document.createElement("details");
+            details.className = "mb-3 group";
+            details.open = true;
+
+            const summary = document.createElement("summary");
+            summary.className = "w-full cursor-pointer font-bold uppercase tracking-widest text-[10px] mb-2 flex justify-between items-center list-none [&::-webkit-details-marker]:hidden";
+            
+            const labelSpan = document.createElement("span");
+            labelSpan.className = getKindColorClass(kind);
+            labelSpan.textContent = kindLabel(kind);
+            summary.appendChild(labelSpan);
+            
+            const svgHtml = '<svg class="chevron w-4 h-4 text-[var(--muted-text-color)] " fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
+            summary.insertAdjacentHTML('beforeend', svgHtml);
+            
+            details.appendChild(summary);
+
+            const ul = document.createElement("ul");
+            ul.className = "list-none p-0 pl-2 m-0 border-l border-[var(--border-color)]";
+            for (const link of links) {
+              ul.appendChild(link.cloneNode(true));
+            }
+            details.appendChild(ul);
+            
+            groupedLinks.push(details);
+          }
+        }
+        replaceElementChildren(internalNavDecls, groupedLinks);
       }
-      replaceElementChildren(internalNavDecls, groupedLinks);
     }
 
     function setButtonState(order) {
