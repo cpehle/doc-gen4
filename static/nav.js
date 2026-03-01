@@ -88,7 +88,35 @@ function setToggleExpanded(button, isOpen) {
   button.setAttribute("aria-expanded", isOpen ? "true" : "false");
 }
 
-// Scroll the nav sidebar so the current page link is visible,
+// Global copy-to-clipboard functionality
+document.addEventListener("click", async (event) => {
+  const btn = event.target.closest(".copy_decl_btn, .copy_code_block_btn");
+  if (!btn) return;
+
+  const originalHtml = btn.innerHTML;
+  let textToCopy = "";
+
+  if (btn.classList.contains("copy_decl_btn")) {
+    textToCopy = btn.getAttribute("data-name") || "";
+  } else if (btn.classList.contains("copy_code_block_btn")) {
+    const pre = btn.parentElement.querySelector("pre");
+    textToCopy = pre ? pre.innerText : "";
+  }
+
+  if (textToCopy) {
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      btn.innerHTML = '<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      setTimeout(() => {
+        btn.innerHTML = originalHtml;
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy: ", err);
+    }
+  }
+});
+
+// Scroll the nav sidebar so the current page link is visible
 // without disturbing the main document's scroll position.
 for (const currentFileLink of document.getElementsByClassName("visible")) {
   const nav = currentFileLink.closest("nav");

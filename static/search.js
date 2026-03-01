@@ -228,7 +228,7 @@ function renderTypeSig(typeSig, declarations) {
         a.href = SITE_ROOT + decl.docLink;
       }
       a.textContent = seg[0];
-      a.classList.add("result_type_link", "text-neutral-500", "dark:text-neutral-400", "hover:underline");
+      a.classList.add("result_type_link", "text-blue-600", "dark:text-blue-400", "hover:underline");
       frag.appendChild(a);
     } else if (Array.isArray(seg) && seg.length >= 1) {
       frag.appendChild(document.createTextNode(seg[0]));
@@ -239,13 +239,13 @@ function renderTypeSig(typeSig, declarations) {
 
 function renderSearchResultRow(item, container, autocomplete, dataCenter) {
   const row = container.appendChild(document.createElement("div"));
-  row.classList.add("search_result", "flex", "items-center", "px-4", "py-3", "border-b", "border-neutral-100", "dark:border-neutral-800", "hover:bg-neutral-50", "dark:hover:bg-neutral-800/50", "transition-colors", "cursor-pointer");
+  row.classList.add("search_result", "flex", "items-center", "px-4", "py-3", "border-b", "border-[var(--border-color)]", "hover:bg-neutral-50", "dark:hover:bg-neutral-800/50", "transition-colors", "cursor-pointer");
   
   const linkdiv = row.appendChild(document.createElement("div"))
   linkdiv.classList.add("result_link", "flex", "items-start", "w-full", "min-w-0");
   
   const kindSpan = linkdiv.appendChild(document.createElement("span"));
-  kindSpan.classList.add("result_kind", "flex-shrink-0", "w-20", "mr-3", "mt-0.5", "px-1", "py-0.5", "border", "border-neutral-200", "dark:border-neutral-700", "bg-neutral-50", "dark:bg-neutral-800", "text-[0.65rem]", "font-bold", "tracking-wider", "uppercase", "text-center", "text-neutral-500", "dark:text-neutral-400", "rounded", "hover:border-neutral-400", "dark:hover:border-neutral-500", "hover:text-neutral-900", "dark:hover:text-neutral-100");
+  kindSpan.classList.add("result_kind", "flex-shrink-0", "w-20", "mr-3", "mt-0.5", "px-1", "py-0.5", "border", "border-[var(--border-color)]", "bg-[var(--panel-bg)]", "text-[0.65rem]", "font-bold", "tracking-wider", "uppercase", "text-center", "text-[var(--muted-text-color)]", "rounded", "hover:border-neutral-400", "dark:hover:border-neutral-500");
   kindSpan.textContent = item.kind;
   kindSpan.dataset.kind = item.kind;
   if (SEARCH_PAGE_INPUT) {
@@ -268,14 +268,14 @@ function renderSearchResultRow(item, container, autocomplete, dataCenter) {
   });
   
   const nameSpan = link.appendChild(document.createElement("span"));
-  nameSpan.classList.add("result_name", "text-neutral-900", "dark:text-neutral-100", "font-mono", "text-sm", "font-semibold", "hover:text-blue-600", "dark:hover:text-blue-400");
+  nameSpan.classList.add("result_name", "text-[var(--text-color)]", "font-mono", "text-sm", "font-semibold", "hover:text-blue-600", "dark:hover:text-blue-400");
   nameSpan.textContent = item.name;
   link.title = item.name;
   
   // Right side: Type Signature (truncated gracefully)
   if (item.typeSig) {
     const sigSpan = textContainer.appendChild(document.createElement("span"));
-    sigSpan.classList.add("result_type", "text-neutral-500", "dark:text-neutral-400", "text-xs", "font-mono", "truncate", "opacity-75", "mt-0.5");
+    sigSpan.classList.add("result_type", "text-[var(--muted-text-color)]", "text-xs", "font-mono", "truncate", "opacity-75", "mt-0.5");
     if (!autocomplete && dataCenter) {
       sigSpan.appendChild(renderTypeSig(item.typeSig, dataCenter.declarationData.declarations));
     } else {
@@ -283,7 +283,7 @@ function renderSearchResultRow(item, container, autocomplete, dataCenter) {
     }
   } else if (item.previewText) {
     const previewSpan = textContainer.appendChild(document.createElement("span"));
-    previewSpan.classList.add("result_preview", "text-neutral-500", "dark:text-neutral-400", "text-xs", "truncate", "opacity-75", "mt-0.5");
+    previewSpan.classList.add("result_preview", "text-[var(--muted-text-color)]", "text-xs", "truncate", "opacity-75", "mt-0.5");
     previewSpan.textContent = item.previewText;
   }
 }

@@ -362,7 +362,8 @@ library_facet docs (lib) : Array FilePath := do
               collectFilesRec bookDir
             else
               pure #[]
-          let traces ← (staticFiles ++ bookSourceFiles).mapM computeTrace
+          let existingStaticFiles ← staticFiles.filterM (·.pathExists)
+          let traces ← (existingStaticFiles ++ bookSourceFiles).mapM computeTrace
           addTrace <| mixTraceArray traces
           let generatedFiles ← collectFilesRec basePath
           let direct := generatedFiles.push dataFile

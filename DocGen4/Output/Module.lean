@@ -64,7 +64,13 @@ def docInfoHeader (doc : DocInfo) : HtmlM Html := do
 
   nodes := nodes.push <| Html.element "span" true #[("class", "decl_args text-neutral-500")] #[" : "]
   nodes := nodes.push <span class="decl_type text-[var(--text-color)]">[← infoFormatToHtml doc.getType]</span>
-  return <div class="decl_header font-mono text-[0.92rem] leading-relaxed"> [nodes] </div>
+  
+  let copyButton := 
+    <button class="copy_decl_btn ml-2 p-1 text-neutral-400 hover:text-blue-600 transition-colors focus:outline-none" title="Copy declaration" "data-name"={doc.getName.toString}>
+      {.raw "<svg class=\"w-3.5 h-3.5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\" ry=\"2\"></rect><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"></path></svg>"}
+    </button>
+
+  return <div class="decl_header font-mono text-[0.92rem] leading-relaxed flex items-center flex-wrap overflow-x-auto"> [nodes] {copyButton} </div>
 
 /--
 Render one token inside an attribute payload. If it looks like a fully-qualified
@@ -211,31 +217,62 @@ Render the internal nav bar (the thing on the right on all module pages).
 -/
 def internalNav (members : Array Name) (moduleName : Name) : HtmlM Html := do
   pure
-    <nav class="internal_nav flex-shrink-0 sticky h-[calc(100vh-2.9rem)] top-[2.9rem] border-l border-[var(--border-color)] bg-[var(--body-bg)] text-[var(--text-color)] px-4 py-6 overflow-auto text-sm leading-relaxed" style="width: clamp(15rem, 19vw, 21rem);">
-      <p class="m-0 mb-3"><a class="no-underline text-blue-600 dark:text-blue-400 hover:underline font-medium" href="#top">Return to top</a></p>
-      <p class="gh_nav_link m-0 mb-6"><a class="no-underline text-[var(--muted-text-color)] hover:text-neutral-900 dark:hover:text-neutral-100 text-[10px] uppercase tracking-wider" href={← getSourceUrl moduleName none}>Source</a></p>
-      <div class="imports mb-6">
-        <details class="mb-3 group">
-          <summary class="w-full cursor-pointer font-bold uppercase tracking-widest text-[10px] text-[var(--muted-text-color)] mb-2 flex justify-between items-center list-none [&::-webkit-details-marker]:hidden">
-            <span>Imports</span>
-            {.raw "<svg class=\"chevron w-5 h-5 \" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M9 5l7 7-7 7\"></path></svg>"}
+    <nav class="internal_nav flex-shrink-0 sticky xl:h-[calc(100vh-2.9rem)] top-[2.9rem] border-b xl:border-b-0 xl:border-l border-[var(--border-color)] bg-[var(--body-bg)] text-[var(--text-color)] px-4 py-6 overflow-auto text-sm leading-relaxed z-30 w-full xl:w-[clamp(15rem,19vw,21rem)]">
+      <div class="xl:hidden flex justify-between items-center mb-4">
+        <h3 class="text-[10px] font-bold uppercase tracking-widest text-[var(--muted-text-color)]">On this page</h3>
+        <details class="group">
+          <summary class="list-none cursor-pointer flex items-center text-blue-600 dark:text-blue-400 font-medium">
+            <span>Menu</span>
+            {.raw "<svg class=\"chevron w-4 h-4 ml-1 transition-transform group-open:rotate-180\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M19 9l-7 7-7-7\"></path></svg>"}
           </summary>
-          <ul class="list-none p-0 pl-3 m-0 border-l border-[var(--border-color)]">
-            [← importsHtml moduleName]
-          </ul>
-        </details>
-        <details class="mb-3 group">
-          <summary class="w-full cursor-pointer font-bold uppercase tracking-widest text-[10px] text-[var(--muted-text-color)] mb-2 flex justify-between items-center list-none [&::-webkit-details-marker]:hidden">
-            <span>Imported by</span>
-            {.raw "<svg class=\"chevron w-5 h-5 \" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M9 5l7 7-7 7\"></path></svg>"}
-          </summary>
-          <ul id={s!"imported-by-{moduleName}"} class="imported-by-list list-none p-0 pl-3 m-0 border-l border-[var(--border-color)] text-xs"> </ul>
+          <div class="absolute left-0 right-0 mt-2 p-4 bg-[var(--body-bg)] border-b border-[var(--border-color)] shadow-xl overflow-y-auto max-h-[60vh] z-40">
+            <p class="m-0 mb-3"><a class="no-underline text-blue-600 dark:text-blue-400 hover:underline font-medium" href="#top">Return to top</a></p>
+            <div class="internal_nav_decls">
+              [members.map declarationToNavLink]
+            </div>
+          </div>
         </details>
       </div>
-      <div class="internal_nav_decls mt-4 pt-4 border-t border-[var(--border-color)]">
-        [members.map declarationToNavLink]
+
+      <div class="hidden xl:block">
+        <p class="m-0 mb-3"><a class="no-underline text-blue-600 dark:text-blue-400 hover:underline font-medium" href="#top">Return to top</a></p>
+        <p class="gh_nav_link m-0 mb-6"><a class="no-underline text-[var(--muted-text-color)] hover:text-neutral-900 dark:hover:text-neutral-100 text-[10px] uppercase tracking-wider" href={← getSourceUrl moduleName none}>Source</a></p>
+        <div class="imports mb-6">
+          <details class="mb-3 group">
+            <summary class="w-full cursor-pointer font-bold uppercase tracking-widest text-[10px] text-[var(--muted-text-color)] mb-2 flex justify-between items-center list-none [&::-webkit-details-marker]:hidden">
+              <span>Imports</span>
+              {.raw "<svg class=\"chevron w-5 h-5 \" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M9 5l7 7-7 7\"></path></svg>"}
+            </summary>
+            <ul class="list-none p-0 pl-3 m-0 border-l border-[var(--border-color)]">
+              [← importsHtml moduleName]
+            </ul>
+          </details>
+          <details class="mb-3 group">
+            <summary class="w-full cursor-pointer font-bold uppercase tracking-widest text-[10px] text-[var(--muted-text-color)] mb-2 flex justify-between items-center list-none [&::-webkit-details-marker]:hidden">
+              <span>Imported by</span>
+              {.raw "<svg class=\"chevron w-5 h-5 \" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M9 5l7 7-7 7\"></path></svg>"}
+            </summary>
+            <ul id={s!"imported-by-{moduleName}"} class="imported-by-list list-none p-0 pl-3 m-0 border-l border-[var(--border-color)] text-xs"> </ul>
+          </details>
+        </div>
+        <div class="internal_nav_decls mt-4 pt-4 border-t border-[var(--border-color)]">
+          [members.map declarationToNavLink]
+        </div>
       </div>
     </nav>
+
+def breadcrumb (name : Name) : BaseHtmlM Html := do
+  let components := name.components
+  let mut nodes : Array Html := #[]
+  let mut currentName := Name.anonymous
+  for i in [0:components.length] do
+    let c := components[i]!
+    currentName := Name.mkStr currentName c.toString
+    let link ← moduleNameToLink currentName
+    nodes := nodes.push <a class="no-underline text-blue-600 dark:text-blue-400 hover:underline" href={link}>{c.toString}</a>
+    if i < components.length - 1 then
+      nodes := nodes.push <span class="mx-1 text-neutral-400">.</span>
+  return <nav class="flex text-xs font-mono mb-6 overflow-x-auto whitespace-nowrap pb-2">[nodes]</nav>
 
 /--
 The main entry point to rendering the HTML for an entire module.
@@ -245,7 +282,7 @@ def moduleToHtml (module : Process.Module) : HtmlM Html := withTheReader SiteBas
   let memberDocs ← relevantMembers.mapM (moduleMemberToHtml module.name)
   let memberNames := filterDocInfo relevantMembers |>.map DocInfo.getName
   templateLiftExtends (baseHtmlGenerator module.name.toString) <| pure #[
-    Html.element "main" true #[("class", "px-6 py-8 flex-auto min-w-0 bg-[var(--body-bg)] text-[var(--text-color)] text-[var(--text-color)]"), ("style", "max-width: var(--content-width);")] <| #[moduleViewToggle] ++ memberDocs,
+    Html.element "main" true #[("class", "px-4 xl:px-8 py-8 flex-auto min-w-0 bg-[var(--body-bg)] text-[var(--text-color)]"), ("style", "max-width: var(--content-width);")] <| #[← breadcrumb module.name, moduleViewToggle] ++ memberDocs,
     ← internalNav memberNames module.name
   ]
 

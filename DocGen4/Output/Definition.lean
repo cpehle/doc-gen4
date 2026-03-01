@@ -12,7 +12,7 @@ open Lean Widget
 def equationLimit : Nat := 200
 
 def equationToHtml (c : CodeWithInfos) : HtmlM Html := do
-  return <li class="equation mb-1 list-none text-[var(--muted-text-color)]">[← infoFormatToHtml c]</li>
+  return <li class="equation mb-1 list-none text-[var(--muted-text-color)] break-all">[← infoFormatToHtml c]</li>
 
 /--
 Attempt to render all `simp` equations for this definition. At a size

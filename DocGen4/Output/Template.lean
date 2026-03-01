@@ -46,31 +46,33 @@ def baseHtmlGenerator (title : String) (site : Array Html) : BaseHtmlM Html := d
       </head>
 
       <body>
-
-        <input id="nav_toggle" type="checkbox"/>
-
+                        <input id="nav_toggle" type="checkbox" class="hidden"/>
+                
                         <header class="fixed top-0 left-0 right-0 z-50 flex items-center px-4 border-b bg-[var(--body-bg)] text-[var(--text-color)] border-[var(--border-color)]" style="height: 2.9rem;">
-                          <h1 class="flex items-center text-xs font-medium uppercase tracking-wider m-0 mr-6 text-[var(--muted-text-color)]"><label for="nav_toggle" class="cursor-pointer"></label><span class="hidden sm:inline">Documentation</span></h1>
-                          <h2 class="flex-auto text-sm font-medium m-0 truncate text-[var(--text-color)] font-mono">[breakWithin title]</h2>
-                          
-                          <button id="theme-toggle" class="ml-auto mr-4 flex items-center justify-center w-8 h-8 rounded-sm text-[var(--muted-text-color)] hover:text-[var(--text-color)] border border-[var(--border-color)] bg-[var(--panel-bg)] hover:bg-[var(--code-bg)] transition-colors focus:outline-none" title="Toggle dark mode (⌘T)">
+                          <label for="nav_toggle" class="xl:hidden mr-4 p-1 flex-shrink-0 rounded-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer text-[var(--muted-text-color)]">
+                            {.raw "<svg class=\"w-6 h-6\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 6h16M4 12h16M4 18h16\"></path></svg>"}
+                          </label>
+                
+                  <h1 class="flex items-center text-xs font-medium uppercase tracking-wider m-0 mr-4 sm:mr-6 flex-shrink-0 text-[var(--muted-text-color)]"><span class="hidden sm:inline">Documentation</span></h1>
+                  <h2 class="flex-auto text-sm font-medium m-0 truncate text-[var(--text-color)] font-mono">[breakWithin title]</h2>
+                                  <button id="theme-toggle" class="ml-auto mr-2 sm:mr-4 flex items-center justify-center w-8 h-8 flex-shrink-0 rounded-sm text-[var(--muted-text-color)] hover:text-[var(--text-color)] border border-[var(--border-color)] bg-[var(--panel-bg)] hover:bg-[var(--code-bg)] transition-colors focus:outline-none" title="Toggle dark mode (⌘T)">
                             {.raw "<svg id=\"theme-toggle-dark-icon\" class=\"hidden w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z\"></path></svg>"}
                             {.raw "<svg id=\"theme-toggle-light-icon\" class=\"hidden w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"5\"></circle><line x1=\"12\" y1=\"1\" x2=\"12\" y2=\"3\"></line><line x1=\"12\" y1=\"21\" x2=\"12\" y2=\"23\"></line><line x1=\"4.22\" y1=\"4.22\" x2=\"5.64\" y2=\"5.64\"></line><line x1=\"18.36\" y1=\"18.36\" x2=\"19.78\" y2=\"19.78\"></line><line x1=\"1\" y1=\"12\" x2=\"3\" y2=\"12\"></line><line x1=\"21\" y1=\"12\" x2=\"23\" y2=\"12\"></line><line x1=\"4.22\" y1=\"19.78\" x2=\"5.64\" y2=\"18.36\"></line><line x1=\"18.36\" y1=\"5.64\" x2=\"19.78\" y2=\"4.22\"></line></svg>"}
                           </button>
 
-                          <button id="search_trigger" class="relative flex-shrink-0 flex items-center w-64 pl-10 pr-12 py-1.5 text-sm rounded-sm bg-neutral-100 dark:bg-neutral-800 border-transparent text-[var(--muted-text-color)] hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-left">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                          <button id="search_trigger" class="relative flex-shrink-0 flex items-center justify-center sm:justify-start w-8 sm:w-64 pl-0 sm:pl-10 pr-0 sm:pr-12 py-1.5 text-sm rounded-sm bg-neutral-100 dark:bg-neutral-800 border-transparent text-[var(--muted-text-color)] hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-left">
+                            <div class="sm:absolute inset-y-0 left-0 flex items-center sm:pl-3 pointer-events-none">
                               {.raw "<svg class=\"w-4 h-4\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 20 20\"><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z\"/></svg>"}
                             </div>
-                            Search...
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                            <span class="hidden sm:inline">Search...</span>
+                            <div class="hidden sm:flex absolute inset-y-0 right-0 items-center pr-2 pointer-events-none">
                               <span class="text-[10px] font-medium font-sans border border-neutral-200 dark:border-neutral-700 bg-[var(--body-bg)] text-[var(--text-color)] rounded-sm px-1.5 py-0.5 shadow-sm">{.raw "⌘K"}</span>
                             </div>
                           </button>
                         </header>
                 
-                        <div id="search_modal" class="fixed inset-0 z-[100] hidden bg-neutral-900/50 dark:bg-black/50 backdrop-blur-[2px] p-4 sm:p-6 md:p-[10vh]">
-                          <div class="mx-auto w-full max-w-2xl bg-[var(--body-bg)] text-[var(--text-color)] rounded-sm shadow-2xl flex flex-col overflow-hidden border border-[var(--border-color)] h-[80vh] sm:h-auto sm:max-h-[80vh]">
+                        <div id="search_modal" class="fixed inset-0 z-[100] hidden bg-neutral-900/50 dark:bg-black/50 backdrop-blur-[2px] p-0 sm:p-6 md:p-[10vh]">
+                          <div class="mx-auto w-full max-w-2xl bg-[var(--body-bg)] text-[var(--text-color)] sm:rounded-sm shadow-2xl flex flex-col overflow-hidden border border-[var(--border-color)] h-full sm:h-auto sm:max-h-[80vh]">
                             <form id="search_form" class="relative flex items-center m-0 border-b border-[var(--border-color)] flex-shrink-0" onsubmit="event.preventDefault();">
                               <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                                 {.raw "<svg class=\"w-5 h-5 text-[var(--muted-text-color)]\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 20 20\"><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z\"/></svg>"}
@@ -81,7 +83,8 @@ def baseHtmlGenerator (title : String) (site : Array Html) : BaseHtmlM Html := d
                           </div>
                         </div>
 
-                        <div class="flex pt-12 min-h-screen bg-[var(--body-bg)] text-[var(--text-color)]">
+                        <div class="flex flex-col xl:flex-row pt-[2.9rem] min-h-screen bg-[var(--body-bg)] text-[var(--text-color)]">
+                          <label for="nav_toggle" class="fixed inset-0 z-40 hidden bg-neutral-900/50 backdrop-blur-sm xl:hidden"></label>
                           {.raw "<!-- NAV_START --><nav class=\"nav\"></nav><!-- NAV_END -->"}
                           [site]
                         </div>

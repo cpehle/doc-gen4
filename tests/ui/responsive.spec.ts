@@ -12,30 +12,33 @@ test.describe('Responsive Sidebar', () => {
     // On wide desktop, sidebar should be visible and not translated
     await expect(sidebar).toBeVisible();
     
-    // The hamburger menu (label for nav_toggle) should be hidden on xl+
-    const hamburger = page.locator('label[for="nav_toggle"]');
+    // The hamburger menu (label for nav_toggle in header) should be hidden on xl+
+    const hamburger = page.locator('header label[for="nav_toggle"]');
     await expect(hamburger).not.toBeVisible();
 
     // --- Tablet/Smaller Desktop View (Narrow: 1024px - below xl) ---
     await page.setViewportSize({ width: 1024, height: 900 });
     
-    // On narrower screens, the sidebar should be hidden (translated or display:none)
-    // Based on our CSS: 'hidden xl:block' and '-translate-x-full'
+    // On narrower screens, the sidebar should be hidden
     await expect(sidebar).not.toBeInViewport();
     
-    // Hamburger menu should now be visible
+    // Hamburger menu in header should now be visible
     await expect(hamburger).toBeVisible();
 
     // --- Interaction Test: Open Sidebar on Mobile ---
     await hamburger.click();
     
-    // Sidebar should now be visible (due to peer-checked:translate-x-0 or peer-checked:block)
+    // Wait for the CSS transition to complete
+    await page.waitForTimeout(300);
+
+    // Sidebar should now be visible
     await expect(sidebar).toBeInViewport();
     await expect(sidebar).toBeVisible();
 
-    // Close it by clicking the overlay or the X inside
+    // Close it by clicking the X inside the nav
     const closeBtn = page.locator('nav.nav label[for="nav_toggle"]');
     await closeBtn.click();
+    await page.waitForTimeout(300);
     await expect(sidebar).not.toBeInViewport();
   });
 });

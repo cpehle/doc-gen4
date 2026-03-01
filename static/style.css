@@ -172,13 +172,7 @@ h6 {
   font-size: var(--font-size-h3);
 }
 
-#nav_toggle {
-  display: none;
-}
 
-label[for='nav_toggle'] {
-  display: none;
-}
 
 /* Header, main, and nav are now primarily styled with Tachyons classes in Lean files */
 
@@ -784,27 +778,9 @@ main h6 {
     padding: 0 0.15rem;
   }
 
-  #nav_toggle:not(:checked) ~ .nav {
-    display: none;
-  }
 
-  #nav_toggle:checked ~ main {
-    visibility: hidden;
-  }
 
-  label[for='nav_toggle'] {
-    display: inline-block;
-    border: 1px solid var(--border-color);
-    padding: 0.18rem 0.42rem;
-    cursor: pointer;
-    background: var(--panel-bg);
-    text-transform: lowercase;
-    font-size: 0.82rem;
-  }
 
-  label[for='nav_toggle']::before {
-    content: 'menu';
-  }
 
   #search_form button {
     display: none;
@@ -839,3 +815,14 @@ main h6 {
     width: auto;
   }
 }
+
+/* Responsive Sidebar Toggle */
+#nav_toggle:checked ~ div nav.nav {
+  transform: translateX(0) !important;
+  display: block !important;
+}
+
+#nav_toggle:checked ~ div label[for="nav_toggle"] {
+  display: block !important;
+}
+

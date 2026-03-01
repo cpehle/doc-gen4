@@ -30,13 +30,13 @@ def fieldToHtml (f : Process.FieldInfo) : HtmlM Html := do
         pure #[]
     pure
       <li id={name} class="structure_field mb-2 list-none">
-        <div class="structure_field_info leading-relaxed">{nameNode} [args] <span class="text-[var(--muted-text-color)] mx-1">:</span> [← infoFormatToHtml f.type]</div>
+        <div class="structure_field_info leading-relaxed flex flex-wrap items-baseline gap-x-1 break-all">{nameNode} [args] <span class="text-[var(--muted-text-color)]">:</span> [← infoFormatToHtml f.type]</div>
         [doc]
       </li>
   else
     pure
       <li class="structure_field mb-1 list-none opacity-70">
-        <div class="structure_field_info leading-relaxed">{nameNode} [args] <span class="text-[var(--muted-text-color)] mx-1">:</span> [← infoFormatToHtml f.type]</div>
+        <div class="structure_field_info leading-relaxed flex flex-wrap items-baseline gap-x-1 break-all">{nameNode} [args] <span class="text-[var(--muted-text-color)]">:</span> [← infoFormatToHtml f.type]</div>
       </li>
 
 /--
@@ -46,15 +46,15 @@ def structureToHtml (i : Process.StructureInfo) : HtmlM (Array Html) := do
   let structureHtml ← do
     if Name.isSuffixOf `mk i.ctor.name then
       pure
-        <ul class="list-none p-0 pl-6 mt-2 space-y-1" id={i.ctor.name.toString}>
+        <ul class="list-none p-0 pl-4 lg:pl-6 mt-2 space-y-1" id={i.ctor.name.toString}>
           [← i.fieldInfo.mapM fieldToHtml]
         </ul>
     else
       let ctorShortName := i.ctor.name.componentsRev.head!.toString
       pure
         <div class="mt-3">
-          <div id={i.ctor.name.toString} class="font-mono font-bold text-[var(--text-color)] mb-1">{s!"{ctorShortName} "} :: (</div>
-          <ul class="list-none p-0 pl-6 space-y-1">
+          <div id={i.ctor.name.toString} class="font-mono font-bold text-[var(--text-color)] mb-1 flex flex-wrap break-all">{s!"{ctorShortName} "} :: (</div>
+          <ul class="list-none p-0 pl-4 lg:pl-6 space-y-1">
             [← i.fieldInfo.mapM fieldToHtml]
           </ul>
           <div class="font-mono font-bold text-[var(--text-color)]">)</div>
