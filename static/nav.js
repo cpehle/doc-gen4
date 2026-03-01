@@ -89,32 +89,54 @@ function setToggleExpanded(button, isOpen) {
 }
 
 // Global copy-to-clipboard functionality
-document.addEventListener("click", async (event) => {
+document.addEventListener("click", (event) => {
   const btn = event.target.closest(".copy_decl_btn, .copy_code_block_btn, #copy-page-btn");
   if (!btn) return;
 
   const originalHtml = btn.innerHTML;
-  let textToCopy = "";
+  
+  const showSuccess = () => {
+    btn.innerHTML = '<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    setTimeout(() => {
+      btn.innerHTML = originalHtml;
+    }, 2000);
+  };
+
+  let textPromise;
 
   if (btn.classList.contains("copy_decl_btn")) {
-    textToCopy = btn.getAttribute("data-name") || "";
+    textPromise = Promise.resolve(btn.getAttribute("data-name") || "");
   } else if (btn.classList.contains("copy_code_block_btn")) {
     const pre = btn.parentElement.querySelector("pre");
-    textToCopy = pre ? pre.innerText : "";
+    textPromise = Promise.resolve(pre ? pre.innerText : "");
   } else if (btn.id === "copy-page-btn") {
-    const mainContent = document.querySelector("main");
-    textToCopy = mainContent ? mainContent.innerText : document.body.innerText;
+    const mdUrl = window.location.pathname.replace(/\.html$/, ".md");
+    textPromise = fetch(mdUrl).then(response => {
+      if (response.ok) return response.text();
+      throw new Error("Markdown not found");
+    }).catch(() => {
+      const mainContent = document.querySelector("main");
+      return mainContent ? mainContent.innerText : document.body.innerText;
+    });
   }
 
-  if (textToCopy) {
-    try {
-      await navigator.clipboard.writeText(textToCopy);
-      btn.innerHTML = '<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-      setTimeout(() => {
-        btn.innerHTML = originalHtml;
-      }, 2000);
-    } catch (err) {
-      console.error("Failed to copy: ", err);
+  if (textPromise) {
+    if (navigator.clipboard && window.ClipboardItem) {
+      // Create the ClipboardItem synchronously before the async execution yields,
+      // which preserves the user gesture for strict browsers like Safari.
+      const blobPromise = textPromise.then(text => new Blob([text], { type: "text/plain" }));
+      const item = new ClipboardItem({ "text/plain": blobPromise });
+      navigator.clipboard.write([item])
+        .then(showSuccess)
+        .catch(err => {
+          console.error("ClipboardItem write failed, falling back to writeText: ", err);
+          textPromise.then(text => navigator.clipboard.writeText(text)).then(showSuccess).catch(e => console.error(e));
+        });
+    } else {
+      textPromise
+        .then(text => navigator.clipboard.writeText(text))
+        .then(showSuccess)
+        .catch(err => console.error("Failed to copy: ", err));
     }
   }
 });
