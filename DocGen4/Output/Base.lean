@@ -283,7 +283,7 @@ section Static
 The following section contains all the statically included files that
 are used in documentation generation, notably JS and CSS ones.
 -/
-  -- Touch this module when embedded static assets change (e.g. style.css/nav.js/module-view.js). v8
+  -- Touch this module when embedded static assets change (e.g. style.css/nav.js/module-view.js). v9
   def styleCss : String := include_str "../../static/style.css"
   def faviconSvg : String := include_str "../../static/favicon.svg"
   def declarationDataCenterJs : String := include_str "../../static/declaration-data.js"

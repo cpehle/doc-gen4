@@ -90,7 +90,7 @@ function setToggleExpanded(button, isOpen) {
 
 // Global copy-to-clipboard functionality
 document.addEventListener("click", async (event) => {
-  const btn = event.target.closest(".copy_decl_btn, .copy_code_block_btn");
+  const btn = event.target.closest(".copy_decl_btn, .copy_code_block_btn, #copy-page-btn");
   if (!btn) return;
 
   const originalHtml = btn.innerHTML;
@@ -101,6 +101,9 @@ document.addEventListener("click", async (event) => {
   } else if (btn.classList.contains("copy_code_block_btn")) {
     const pre = btn.parentElement.querySelector("pre");
     textToCopy = pre ? pre.innerText : "";
+  } else if (btn.id === "copy-page-btn") {
+    const mainContent = document.querySelector("main");
+    textToCopy = mainContent ? mainContent.innerText : document.body.innerText;
   }
 
   if (textToCopy) {
