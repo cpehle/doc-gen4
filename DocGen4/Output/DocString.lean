@@ -47,16 +47,21 @@ def nameToLink? (s : String) : HtmlM (Option String) := do
     else
       match (← getCurrentName) with
       | some currentName =>
-        match res.moduleInfo[currentName]! |>.members |> filterDocInfo |>.find? (sameEnd ·.getName name) with
-        | some info =>
-          declNameToLink info.getName
-        | _ => return none
-      | _ => return none
+        match res.moduleInfo[currentName]? with
+        | some currentModule =>
+          let sameEndName (info : DocInfo) : Bool :=
+            sameEnd info.getName name
+          match (filterDocInfo currentModule.members).find? sameEndName with
+          | some info =>
+            declNameToLink info.getName
+          | none => return none
+        | none => return none
+      | none => return none
   else
     return none
   where
     -- check if two names have the same ending components
-    sameEnd n1 n2 :=
+    sameEnd (n1 n2 : Name) :=
       List.zip n1.componentsRev n2.componentsRev
       |>.all fun ⟨a, b⟩ => a == b
 
