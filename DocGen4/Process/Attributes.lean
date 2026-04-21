@@ -81,6 +81,7 @@ instance : ToString ReducibilityStatus where
     match kind with
     | .reducible => "reducible"
     | .semireducible => "semireducible"
+    | .implicitReducible => "implicit_reducible"
     | .irreducible => "irreducible"
 
 /--
@@ -168,6 +169,7 @@ def getReducibility (decl : Name) : MetaM (Option String) := do
   match status with
   | .reducible => return some "reducible"
   | .irreducible => return some "irreducible"
+  | .implicitReducible => return some "implicit_reducible"
   -- This is the default so we don't print it.
   | .semireducible => return none
 
