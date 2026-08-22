@@ -112,6 +112,10 @@ structure SiteBaseContext where
   Whether markdown links should stay relative to the current page.
   -/
   preserveRelativeLinks : Bool := false
+  /--
+  Whether generated pages may link to declaration source locations.
+  -/
+  sourceLinksEnabled : Bool := true
 
 /--
 Declaration decorator function type: given a module name, declaration name, and declaration kind,
@@ -212,6 +216,7 @@ def getHierarchy : BaseHtmlM Hierarchy := do return (← read).hierarchy
 def getCurrentName : BaseHtmlM (Option Name) := do return (← read).currentName
 def getCurrentPage : BaseHtmlM (Option String) := do return (← read).currentPage
 def getPreserveRelativeLinks : BaseHtmlM Bool := do return (← read).preserveRelativeLinks
+def getSourceLinksEnabled : BaseHtmlM Bool := do return (← read).sourceLinksEnabled
 def getResult : HtmlM AnalyzerResult := do return (← read).result
 def getSourceUrl (module : Name) (range : Option DeclarationRange): HtmlM String := do return (← read).sourceLinker module range
 def getDeclarationDecorator : HtmlM DeclarationDecoratorFn := do return (← read).declarationDecorator

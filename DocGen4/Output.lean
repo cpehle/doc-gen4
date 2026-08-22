@@ -165,6 +165,7 @@ def htmlOutputResults (baseConfig : SiteBaseContext) (result : AnalyzerResult) (
 def getSimpleBaseContext (buildDir : System.FilePath) (hierarchy : Hierarchy) :
     IO SiteBaseContext := do
   let contents ← FS.readFile (declarationsBasePath buildDir / "references.json") <|> (pure "[]")
+  let sourceLinksEnabled := (← IO.getEnv "DOCGEN_SRC") != some "none"
   match Json.parse contents with
   | .error err =>
     throw <| IO.userError s!"Failed to parse 'references.json': {err}"
@@ -179,6 +180,7 @@ def getSimpleBaseContext (buildDir : System.FilePath) (hierarchy : Hierarchy) :
         currentName := none
         hierarchy := hierarchy
         refs := refs
+        sourceLinksEnabled := sourceLinksEnabled
       }
 
 /-- Recursively collect all HTML files under a directory. -/

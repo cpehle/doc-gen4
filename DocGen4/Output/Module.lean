@@ -142,6 +142,14 @@ def docInfoToHtml (module : Name) (doc : DocInfo) : HtmlM Html := do
   -- custom decoration (e.g., verification badges from external tools)
   let decorator ← getDeclarationDecorator
   let decoratorHtml := decorator module doc.getName doc.getKind
+  let sourceUrl ← getSourceUrl module doc.getDeclarationRange
+  let sourceHtml :=
+    if sourceUrl.isEmpty then
+      #[]
+    else
+      #[<div class="float-right ml-4">
+          <a class="text-[10px] font-bold uppercase tracking-widest text-neutral-400 hover:text-neutral-900 dark:text-neutral-500 dark:hover:text-neutral-100 no-underline" href={sourceUrl}>source</a>
+        </div>]
   let kindColor := match doc.getKind with
   | "def" | "instance" => " border-blue-500 dark:border-blue-400"
   | "theorem" => " border-purple-500 dark:border-purple-400"
@@ -152,9 +160,7 @@ def docInfoToHtml (module : Name) (doc : DocInfo) : HtmlM Html := do
   pure
     <div class={cssClass} id={doc.getName.toString}>
       <div class={doc.getKind}>
-        <div class="float-right ml-4">
-          <a class="text-[10px] font-bold uppercase tracking-widest text-neutral-400 hover:text-neutral-900 dark:text-neutral-500 dark:hover:text-neutral-100 no-underline" href={← getSourceUrl module doc.getDeclarationRange}>source</a>
-        </div>
+        [sourceHtml]
         [decoratorHtml]
         [attrsHtml]
         {← docInfoHeader doc}
@@ -216,6 +222,12 @@ def importsHtml (moduleName : Name) : HtmlM (Array Html) := do
 Render the internal nav bar (the thing on the right on all module pages).
 -/
 def internalNav (members : Array Name) (moduleName : Name) : HtmlM Html := do
+  let sourceUrl ← getSourceUrl moduleName none
+  let sourceHtml :=
+    if sourceUrl.isEmpty then
+      #[]
+    else
+      #[<p class="gh_nav_link m-0 mb-6"><a class="no-underline text-[var(--muted-text-color)] hover:text-neutral-900 dark:hover:text-neutral-100 text-[10px] uppercase tracking-wider" href={sourceUrl}>Source</a></p>]
   pure
     <nav class="internal_nav flex-shrink-0 sticky xl:h-[calc(100vh-2.9rem)] top-[2.9rem] border-b xl:border-b-0 xl:border-l border-[var(--border-color)] bg-[var(--body-bg)] text-[var(--text-color)] px-4 py-6 overflow-auto text-sm leading-relaxed z-30 w-full xl:w-[clamp(15rem,19vw,21rem)]">
       <div class="xl:hidden flex justify-between items-center mb-4">
@@ -236,7 +248,7 @@ def internalNav (members : Array Name) (moduleName : Name) : HtmlM Html := do
 
       <div class="hidden xl:block">
         <p class="m-0 mb-3"><a class="no-underline text-blue-600 dark:text-blue-400 hover:underline font-medium" href="#top">Return to top</a></p>
-        <p class="gh_nav_link m-0 mb-6"><a class="no-underline text-[var(--muted-text-color)] hover:text-neutral-900 dark:hover:text-neutral-100 text-[10px] uppercase tracking-wider" href={← getSourceUrl moduleName none}>Source</a></p>
+        [sourceHtml]
         <div class="imports mb-6">
           <details class="mb-3 group">
             <summary class="w-full cursor-pointer font-bold uppercase tracking-widest text-[10px] text-[var(--muted-text-color)] mb-2 flex justify-between items-center list-none [&::-webkit-details-marker]:hidden">

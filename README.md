@@ -119,6 +119,8 @@ The different options are:
    This is the default if `DOCGEN_SRC` is unset.
  * `DOCGEN_SRC="file"` creates references to local file references.
  * `DOCGEN_SRC="vscode"` creates [VSCode URLs](https://code.visualstudio.com/docs/editor/command-line#_opening-vs-code-with-urls) to local files.
+ * `DOCGEN_SRC="none"` omits source links. Use this when documenting compiled modules whose
+   source locations must not be published.
 
 ## Disabling equations
 Generation of equations for definitions is enabled by default, but can be disabled by setting the `DISABLE_EQUATIONS` environment variable to `1`.

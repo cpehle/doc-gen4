@@ -104,7 +104,8 @@ def runGenCoreCmd (p : Parsed) : IO UInt32 := do
   let module := p.positionalArg! "module" |>.as! String |> String.toName
   let (doc, hierarchy) ← load <| .analyzePrefixModules module
   let baseConfig ← getSimpleBaseContext buildDir hierarchy
-  let outputs ← htmlOutputResults baseConfig doc none
+  let sourceUrl? := if (← IO.getEnv "DOCGEN_SRC") == some "none" then some "" else none
+  let outputs ← htmlOutputResults baseConfig doc sourceUrl?
   if let .some manifestOutput := manifestOutput? then
     IO.FS.writeFile manifestOutput (Lean.toJson outputs).compress
   return 0

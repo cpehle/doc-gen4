@@ -114,13 +114,15 @@ inductive UriSource
   | github
   | vscode
   | file
+  | none
 
 def UriSource.parse : IO UriSource := do
   match ← IO.getEnv "DOCGEN_SRC" with
   | .none | .some "github" | .some "" => pure .github
   | "vscode" => pure .vscode
   | "file" => pure .file
-  | _ => error "$DOCGEN_SRC should be github, file, or vscode."
+  | "none" => pure .none
+  | _ => error "$DOCGEN_SRC should be github, file, vscode, or none."
 
 /-! Note that all URIs can use `/` even when the system path separator is `\`. -/
 
@@ -147,12 +149,17 @@ package_facet srcUri.file (pkg) : String := .pure <$> do
   let dir ← IO.FS.realPath (pkg.dir / pkg.config.srcDir)
   return s!"file://{dir}"
 
+/-- An empty source URI for documentation that must not expose source links. -/
+package_facet srcUri.none (_pkg) : String := Job.async do
+  return ""
+
 /-- The URI of the source code of the package, respecting `DOCGEN_SRC`. -/
 package_facet srcUri (pkg) : String := do
   match ← UriSource.parse with
   | .github => fetch <| pkg.facet `srcUri.github
   | .vscode => fetch <| pkg.facet `srcUri.vscode
   | .file => fetch <| pkg.facet `srcUri.file
+  | .none => fetch <| pkg.facet `srcUri.none
 
 
 private def makeLibSrcUriFacet (lib : LeanLib) (which : Lean.Name)
@@ -160,6 +167,8 @@ private def makeLibSrcUriFacet (lib : LeanLib) (which : Lean.Name)
     FetchM (Job String) := do
   let pkgUri ← fetch <| lib.pkg.facet which
   pkgUri.mapM (sync := true) fun pkgUri => do
+    if pkgUri.isEmpty then
+      return ""
     return "/".intercalate (pkgUri :: filteredPath lib.config.srcDir)
 
 /-- The github URI of the source code of the library. -/
@@ -168,6 +177,8 @@ library_facet srcUri.github (lib) : String := makeLibSrcUriFacet lib `srcUri.git
 library_facet srcUri.vscode (lib) : String := makeLibSrcUriFacet lib `srcUri.vscode
 /-- The `file://` URI of the source code of the library. -/
 library_facet srcUri.file (lib) : String := makeLibSrcUriFacet lib `srcUri.file
+/-- An empty source URI for documentation that must not expose source links. -/
+library_facet srcUri.none (lib) : String := makeLibSrcUriFacet lib `srcUri.none
 /-- The URI of the source code of the library, respecting `DOCGEN_SRC`. -/
 library_facet srcUri (lib) : String := makeLibSrcUriFacet lib `srcUri
 
@@ -176,6 +187,8 @@ private def makeModuleSrcUriFacet (mod : Module) (which : Lean.Name)
     FetchM (Job String) := do
   let libUri ← fetch <| mod.lib.facet which
   libUri.mapM (sync := true) fun libUri => do
+    if libUri.isEmpty then
+      return ""
     return mod.name.components.foldl (init := libUri) (·.push '/' ++ ·.toString (escape := False)) ++ ".lean"
 
 /-- The github URI of the source code of the module. -/
@@ -184,6 +197,8 @@ module_facet srcUri.github (mod) : String := makeModuleSrcUriFacet mod `srcUri.g
 module_facet srcUri.vscode (mod) : String := makeModuleSrcUriFacet mod `srcUri.vscode
 /-- The `file://` URI of the source code of the module. -/
 module_facet srcUri.file (mod) : String := makeModuleSrcUriFacet mod `srcUri.file
+/-- An empty source URI for documentation that must not expose source links. -/
+module_facet srcUri.none (mod) : String := makeModuleSrcUriFacet mod `srcUri.none
 /-- The URI of the source code of the module, respecting `DOCGEN_SRC`. -/
 module_facet srcUri (mod) : String := makeModuleSrcUriFacet mod `srcUri
 
