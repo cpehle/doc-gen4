@@ -16,7 +16,7 @@ def fieldToHtml (f : Process.FieldInfo) : HtmlM Html := do
   let shortName := f.name.componentsRev.head!.toString
   let name := f.name.toString
   let args ← f.args.mapM argToHtml
-  let nameNode ← if f.isDirect then
+  let nameNode ← if f.isDirect || !(← getResult).name2ModIdx.contains f.name then
     pure <span class="font-bold text-[var(--text-color)]">{shortName}</span>
   else
     pure <a class="text-blue-600 dark:text-blue-400 no-underline hover:underline" href={← declNameToLink f.name}>{shortName}</a>

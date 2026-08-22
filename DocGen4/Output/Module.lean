@@ -280,15 +280,19 @@ def internalNav (members : Array Name) (moduleName : Name) : HtmlM Html := do
       </div>
     </nav>
 
-def breadcrumb (name : Name) : BaseHtmlM Html := do
+def breadcrumb (name : Name) : HtmlM Html := do
+  let result ← getResult
   let components := name.components
   let mut nodes : Array Html := #[]
   let mut currentName := Name.anonymous
   for i in [0:components.length] do
     let c := components[i]!
     currentName := Name.mkStr currentName c.toString
-    let link ← moduleNameToLink currentName
-    nodes := nodes.push <a class="no-underline text-blue-600 dark:text-blue-400 hover:underline" href={link}>{c.toString}</a>
+    if result.moduleInfo.contains currentName then
+      let link ← moduleNameToLink currentName
+      nodes := nodes.push <a class="no-underline text-blue-600 dark:text-blue-400 hover:underline" href={link}>{c.toString}</a>
+    else
+      nodes := nodes.push <span>{c.toString}</span>
     if i < components.length - 1 then
       nodes := nodes.push <span class="mx-1 text-neutral-400">.</span>
   return <nav class="flex text-xs font-mono mb-6 overflow-x-auto whitespace-nowrap pb-2">[nodes]</nav>

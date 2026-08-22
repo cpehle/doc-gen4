@@ -210,9 +210,14 @@ def process (task : AnalyzeTask) : MetaM (AnalyzerResult × Hierarchy) := do
   for (moduleName, module) in res.toArray do
     res := res.insert moduleName {module with members := module.members.qsort ModuleMember.order}
 
-  let hierarchy := Hierarchy.fromArray allModules
+  let mut name2ModIdx : Std.HashMap Name ModuleIdx := {}
+  for (name, moduleIdx) in env.const2ModIdx do
+    if relevantModules.contains allModules[moduleIdx.toNat]! then
+      name2ModIdx := name2ModIdx.insert name moduleIdx
+
+  let hierarchy := Hierarchy.fromArray relevantModules.toArray
   let analysis := {
-    name2ModIdx := env.const2ModIdx,
+    name2ModIdx,
     moduleNames := allModules,
     moduleInfo := res,
   }

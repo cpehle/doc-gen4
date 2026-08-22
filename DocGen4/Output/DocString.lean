@@ -35,13 +35,16 @@ def splitAround (s : String) (p : Char → Bool) : List String := splitAroundAux
 def nameToLink? (s : String) : HtmlM (Option String) := do
   let res ← getResult
   if s.endsWith ".lean" && s.contains '/' then
-    return (← getRoot) ++ s.dropEnd 5 ++ ".html"
+    if ← getSourceLinksEnabled then
+      return (← getRoot) ++ s.dropEnd 5 ++ ".html"
+    else
+      return none
   else if let some name := Lean.Syntax.decodeNameLit ("`" ++ s) then
     -- with exactly the same name
     if res.name2ModIdx.contains name then
       declNameToLink name
     -- module name
-    else if res.moduleNames.contains name then
+    else if res.moduleInfo.contains name then
       moduleNameToLink name
     -- find similar name in the same module
     else
