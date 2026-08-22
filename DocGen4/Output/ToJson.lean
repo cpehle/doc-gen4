@@ -195,6 +195,7 @@ def DocInfo.toJson (sourceLinker : Option DeclarationRange → String) (info : P
 def Process.Module.toJson (module : Process.Module) : HtmlM Json := do
     let mut jsonDecls := []
     let mut instances := #[]
+    let result ← getResult
     let sourceLinker := (← read).sourceLinker module.name
     let declInfo := Process.filterDocInfo module.members
     for decl in declInfo do
@@ -209,7 +210,7 @@ def Process.Module.toJson (module : Process.Module) : HtmlM Json := do
       name := module.name.toString,
       declarations := jsonDecls,
       instances,
-      imports := module.imports.map Name.toString
+      imports := (module.imports.filter fun name => result.moduleInfo.contains name).map Name.toString
     }
     return ToJson.toJson jsonMod
 

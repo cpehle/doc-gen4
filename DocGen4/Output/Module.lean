@@ -215,8 +215,15 @@ Sort the list of all modules this one is importing, linkify it
 and return the HTML.
 -/
 def importsHtml (moduleName : Name) : HtmlM (Array Html) := do
+  let result ← getResult
   let imports := (← getImports moduleName).qsort Name.lt
-  imports.mapM (fun i => do return <li class="mb-1 text-xs">{← moduleToHtmlLink i}</li>)
+  imports.mapM fun i => do
+    let importHtml ←
+      if result.moduleInfo.contains i then
+        moduleToHtmlLink i
+      else
+        pure <span>{i.toString}</span>
+    return <li class="mb-1 text-xs">{importHtml}</li>
 
 /--
 Render the internal nav bar (the thing on the right on all module pages).
