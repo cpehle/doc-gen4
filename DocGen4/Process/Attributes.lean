@@ -77,12 +77,9 @@ instance : ToString SpecializeAttributeKind where
     | .nospecialize => "nospecialize"
 
 instance : ToString ReducibilityStatus where
-  toString kind :=
-    match kind with
-    | .reducible => "reducible"
-    | .semireducible => "semireducible"
-    | .implicitReducible => "implicit_reducible"
-    | .irreducible => "irreducible"
+  toString status :=
+    let attr := status.toAttrString
+    ((attr.drop 1).dropEnd 1).copy
 
 /--
 The list of all enum based attributes doc-gen knows about and can recover.
@@ -166,12 +163,9 @@ def hasCsimp (decl : Name) : MetaM (Option String) := do
 
 def getReducibility (decl : Name) : MetaM (Option String) := do
   let status ← getReducibilityStatus decl
-  match status with
-  | .reducible => return some "reducible"
-  | .irreducible => return some "irreducible"
-  | .implicitReducible => return some "implicit_reducible"
-  -- This is the default so we don't print it.
-  | .semireducible => return none
+  let value := toString status
+  -- Semireducible is the default, so do not print it.
+  return if value == "semireducible" then none else some value
 
 /--
 The list of custom attributes, that don't fit in the parametric or enum
