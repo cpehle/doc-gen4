@@ -835,3 +835,35 @@ main h6 {
   display: block !important;
 }
 
+
+/* Per-snippet copy buttons (code-copy.js) */
+pre.has-copy-button {
+  position: relative;
+}
+.code-copy-button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--panel-bg);
+  color: var(--muted-text-color);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease, color 120ms ease;
+}
+pre.has-copy-button:hover .code-copy-button,
+.code-copy-button:focus-visible {
+  opacity: 1;
+}
+.code-copy-button:hover {
+  color: var(--text-color);
+}
+.code-copy-button.copied {
+  color: #2da44e;
+  opacity: 1;
+}

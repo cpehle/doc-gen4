@@ -229,9 +229,33 @@ private def dedupSummaryEntries (entries : Array SummaryEntry) : Array SummaryEn
     deduped := deduped.push entry
   return deduped
 
-private def chapterPage (chapter : SummaryEntry) (markdown : String)
+/--
+Split off a chapter body's leading level-1 ATX heading. Chapters open
+with `# Title`, and the page chrome renders its own title header — so the
+heading is lifted out of the body instead of repeating right below it.
+The body heading is often fuller than the `SUMMARY.md` nav label
+(`Catalog: Encodings` vs `Encodings`), so it becomes the displayed page
+title while the nav keeps its short label.
+-/
+private def splitLeadingTitleHeading (markdown : String) : Option (String × String) :=
+  let rec go : List String → Option (String × List String)
+    | [] => none
+    | line :: tail =>
+      let trimmed := trimAscii line
+      if trimmed.isEmpty then
+        go tail
+      else if trimmed.startsWith "# " then
+        some (trimAscii (trimmed.drop 2).copy, tail)
+      else
+        none
+  match go (markdown.splitOn "\n") with
+  | some (title, rest) => some (title, "\n".intercalate rest)
+  | none => none
+
+private def chapterPage (pageTitle : String)
+    (markdown bodyMarkdown : String)
     (prev? next? : Option SummaryEntry) : HtmlM Html := do
-  let rendered ← docStringToHtml markdown chapter.title
+  let rendered ← docStringToHtml bodyMarkdown pageTitle
   let mut chapterNav : Array Html := #[]
   if let some prev := prev? then
     chapterNav := chapterNav.push <a class="book-prev blue no-underline hover-underline mr-auto" href={s!"{← getRoot}{prev.href}"}>{s!"← {prev.title}"}</a>
@@ -242,11 +266,11 @@ private def chapterPage (chapter : SummaryEntry) (markdown : String)
   -- We use HTML entities to avoid breaking the script tag
   let escapedMarkdown := ((markdown.replace "\\" "\\\\").replace "`" "\\`").replace "$" "\\$"
   
-  templateLiftExtends (baseHtmlGenerator chapter.title) <| pure #[
+  templateLiftExtends (baseHtmlGenerator pageTitle) <| pure #[
     <main class="px-6 py-6 flex-auto relative min-w-0" style="max-width: var(--content-width);">
       <a id="top"></a>
       <div class="flex justify-between items-start mb-6">
-        <h1 class="text-3xl font-bold m-0 text-[var(--text-color)]">{chapter.title}</h1>
+        <h1 class="text-3xl font-bold m-0 text-[var(--text-color)]">{pageTitle}</h1>
         <button id="copy_markdown_btn" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[var(--muted-text-color)] bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="Copy markdown content">
           {.raw "<svg class=\"w-4 h-4\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\" ry=\"2\"></rect><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"></path></svg>"}
           <span>Copy markdown</span>
@@ -320,11 +344,15 @@ def htmlOutputBook (baseConfig : SiteBaseContext) (bookDir? : Option System.File
     if !(← sourceFile.pathExists) then
       throw <| IO.userError s!"Book chapter '{chapter.sourceRel}' referenced in '{summaryFile}' does not exist."
     let markdown ← IO.FS.readFile sourceFile
-    
+    let (pageTitle, bodyMarkdown) :=
+      match splitLeadingTitleHeading markdown with
+      | some split => split
+      | none => (chapter.title, markdown)
+
     -- Extract a plain text preview
-    let previewText := ((((markdown.replace "\n" " ").replace "#" "").trimAsciiStart.toString).take 200).toString ++ "..."
+    let previewText := ((((bodyMarkdown.replace "\n" " ").replace "#" "").trimAsciiStart.toString).take 200).toString ++ "..."
     documents := documents.push {
-      title := chapter.title,
+      title := pageTitle,
       kind := "guide",
       docLink := chapter.href,
       previewText := previewText
@@ -344,7 +372,7 @@ def htmlOutputBook (baseConfig : SiteBaseContext) (bookDir? : Option System.File
     }
     let prevEntry := if i > 0 then some (chapters[i - 1]!) else none
     let nextEntry := if i + 1 = chapters.size then none else some (chapters[i + 1]!)
-    let (html, state) := (chapterPage chapter markdown prevEntry nextEntry).run {} siteConfig chapterConfig
+    let (html, state) := (chapterPage pageTitle markdown bodyMarkdown prevEntry nextEntry).run {} siteConfig chapterConfig
     if !state.errors.isEmpty then
       throw <| IO.userError s!"There are errors when generating '{outputFile}': {state.errors}"
     IO.FS.writeFile outputFile html.toString

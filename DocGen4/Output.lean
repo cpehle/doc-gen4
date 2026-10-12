@@ -61,6 +61,7 @@ def htmlOutputSetup (config : SiteBaseContext) (staticDir : Option System.FilePa
     ("declaration-data.js", declarationDataCenterJs),
     ("color-scheme.js", colorSchemeJs),
     ("nav.js", navJs),
+    ("code-copy.js", codeCopyJs),
     ("module-view.js", moduleViewJs),
     ("jump-src.js", jumpSrcJs),
     ("shiki.js", shikiJs),
