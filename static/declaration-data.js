@@ -49,7 +49,7 @@ export class DeclarationDataCenter {
 
   static async getData() {
     const dataListUrl = new URL(
-      `${SITE_ROOT}/declarations/declaration-data.bmp`,
+      `${SITE_ROOT}declarations/declaration-data.bmp`,
       window.location
     );
 
