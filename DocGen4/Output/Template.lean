@@ -16,7 +16,8 @@ The HTML template used for all pages.
 -/
 def baseHtmlGenerator (title : String) (site : Array Html) : BaseHtmlM Html := do
   let moduleConstant :=
-    if let some module := ← getCurrentName then
+    -- Book chapters use the pseudo-name `_Book` for nav highlighting; it is not a module.
+    if let some module := (← getCurrentName).filter (· != `_Book) then
       #[<script>{.raw s!"const MODULE_NAME={String.quote module.toString};"}</script>]
     else
       #[]
