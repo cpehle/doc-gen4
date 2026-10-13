@@ -91,7 +91,14 @@ def runIndexCmd (p : Parsed) : IO UInt32 := do
     | none => ".lake/build"
   let staticDir := p.flag? "static" |>.map (·.as! String)
   let bookDir := p.flag? "book" |>.map (·.as! String)
-  let hierarchy ← Hierarchy.fromDirectory (Output.basePath buildDir)
+  -- `DOCGEN_NAV_ROOTS=Foo,Bar` limits the navigation to modules under `Foo` or `Bar`.
+  -- Pages of other modules are still generated, so links to them keep working.
+  let navRoots := match ← IO.getEnv "DOCGEN_NAV_ROOTS" with
+    | some roots => (roots.splitOn ",").toArray.filterMap fun r =>
+        let r := r.trimAscii.toString
+        if r.isEmpty then none else some r.toName
+    | none => #[]
+  let hierarchy ← Hierarchy.fromDirectory (Output.basePath buildDir) navRoots
   let baseConfig ← getSimpleBaseContext buildDir hierarchy
   htmlOutputIndex baseConfig staticDir bookDir
   return 0

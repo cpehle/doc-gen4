@@ -109,7 +109,8 @@ partial def fromDirectoryAux (dir : System.FilePath) (previous : Name) : IO (Arr
       children := children.push <| .str previous (entry.fileName.dropEnd ".html".length).copy
   return children
 
-def fromDirectory (dir : System.FilePath) : IO Hierarchy := do
+/-- The module names of all HTML pages under the documentation directory `dir`. -/
+def moduleNamesFromDirectory (dir : System.FilePath) : IO (Array Name) := do
     let mut children := #[]
     for entry in ← System.FilePath.readDir dir do
       if baseDirBlackList.contains entry.fileName then
@@ -118,7 +119,17 @@ def fromDirectory (dir : System.FilePath) : IO Hierarchy := do
         children := children ++ (← fromDirectoryAux entry.path (.mkSimple entry.fileName))
       else if entry.path.extension = some "html" then
         children := children.push <| .mkSimple (entry.fileName.dropEnd ".html".length).copy
-    return Hierarchy.fromArray children
+    return children
+
+/--
+Build the hierarchy of all HTML pages under `dir`. If `roots` is non-empty, only
+modules that have one of `roots` as a prefix are included.
+-/
+def fromDirectory (dir : System.FilePath) (roots : Array Name := #[]) : IO Hierarchy := do
+    let names ← moduleNamesFromDirectory dir
+    let names := if roots.isEmpty then names else
+      names.filter fun n => roots.any (·.isPrefixOf n)
+    return Hierarchy.fromArray names
 
 end Hierarchy
 end DocGen4
