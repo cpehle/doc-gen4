@@ -128,7 +128,8 @@ export class DeclarationDataCenter {
    * @returns {Array<String>}
    */
   moduleImportedBy(moduleName) {
-    return this.declarationData.modules[moduleName].importedBy;
+    const module = this.declarationData.modules[moduleName];
+    return module === undefined ? [] : module.importedBy;
   }
 
   /**

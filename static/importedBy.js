@@ -6,9 +6,14 @@ async function fillImportedBy() {
   if (typeof(MODULE_NAME) == "undefined") {
     return;
   }
+  // Only module pages have an "Imported by" list; other pages (e.g. book
+  // chapters) have nothing to fill.
+  const importedByList = document.querySelector(".imported-by-list");
+  if (importedByList === null) {
+    return;
+  }
   const dataCenter = await DeclarationDataCenter.init();
   const moduleName = MODULE_NAME;
-  const importedByList = document.querySelector(".imported-by-list");
   const importedBy = dataCenter.moduleImportedBy(moduleName);
   var innerHTML = "";
   for(var module of importedBy) {
