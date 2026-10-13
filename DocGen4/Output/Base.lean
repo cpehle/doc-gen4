@@ -13,6 +13,14 @@ open Lean System Widget Elab Process
 
 def basePathComponent := "doc"
 def basePath (buildDir : System.FilePath) := buildDir / basePathComponent
+
+/--
+Prefix an HTML page with `<!DOCTYPE html>` unless it already has one. Without a
+doctype, browsers render in quirks mode and KaTeX refuses to render math.
+-/
+def withDoctype (html : String) : String :=
+  if html.startsWith "<!DOCTYPE" || html.startsWith "<!doctype" then html
+  else "<!DOCTYPE html>\n" ++ html
 def srcBasePath (buildDir : System.FilePath) := basePath buildDir / "src"
 def declarationsBasePath (buildDir : System.FilePath) := buildDir / "doc-data"
 

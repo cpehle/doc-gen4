@@ -347,7 +347,7 @@ def htmlOutputBook (baseConfig : SiteBaseContext) (bookDir? : Option System.File
     let (html, state) := (chapterPage chapter markdown prevEntry nextEntry).run {} siteConfig chapterConfig
     if !state.errors.isEmpty then
       throw <| IO.userError s!"There are errors when generating '{outputFile}': {state.errors}"
-    IO.FS.writeFile outputFile html.toString
+    IO.FS.writeFile outputFile (withDoctype html.toString)
 
   return {
     baseConfig with
