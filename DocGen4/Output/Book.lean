@@ -158,7 +158,7 @@ private def parseFrontMatterConfig (summaryFile : System.FilePath) (metaLines : 
 
 private def parseSummaryLine? (outputPrefix : String) (line : String) : Option SummaryEntry :=
   let indent := line.takeWhile (fun c => c = ' ' || c = '\t')
-  let level := indent.positions.count / 2
+  let level := indent.positions.length / 2
   let trimmed := (line.dropWhile (fun c => c = ' ' || c = '\t')).copy
   let payload :=
     if trimmed.startsWith "- " then
