@@ -247,7 +247,7 @@ def htmlOutputIndex (baseConfig : SiteBaseContext) (staticDir : Option System.Fi
   let baseConfig ← htmlOutputBook baseConfig bookDir
   patchNavInAllFiles baseConfig
 
-  let mut index : JsonIndex := {}
+  let mut modules : Array JsonModule := #[]
   for entry in ← System.FilePath.readDir (declarationsBasePath baseConfig.buildDir) do
     if entry.fileName.startsWith "declaration-data-" && entry.fileName.endsWith ".bmp" then
       let fileContent ← FS.readFile entry.path
@@ -259,7 +259,12 @@ def htmlOutputIndex (baseConfig : SiteBaseContext) (staticDir : Option System.Fi
         | .error err =>
           throw <| IO.userError s!"failed to parse file '{entry.path}': {err}"
         | .ok (module : JsonModule) =>
-          index := index.addModule module |>.run baseConfig
+          modules := modules.push module
+  -- Modules documented in this build; `importedBy` only records these.
+  let documented : Std.HashSet String := modules.foldl (fun s m => s.insert m.name) {}
+  let mut index : JsonIndex := {}
+  for module in modules do
+    index := index.addModule module documented |>.run baseConfig
 
   let mut indexedDocs : List (String × JsonIndexedDocumentInfo) := []
   for doc in baseConfig.documents do
