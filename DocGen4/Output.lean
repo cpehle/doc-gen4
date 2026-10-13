@@ -78,6 +78,7 @@ def htmlOutputSetup (config : SiteBaseContext) (staticDir : Option System.FilePa
     ("tactics.html", tacticsHtml),
   ]
   for (fileName, content) in docGenStatic do
+    let content := if fileName.endsWith ".html" then withDoctype content else content
     FS.writeFile (basePath config.buildDir / fileName) content
 
   -- Copy bundled font files into the output root.
@@ -101,6 +102,7 @@ def htmlOutputSetup (config : SiteBaseContext) (staticDir : Option System.FilePa
     ("find.js", findJs)
   ]
   for (fileName, content) in findStatic do
+    let content := if fileName.endsWith ".html" then withDoctype content else content
     FS.writeFile (findBasePath config.buildDir / fileName) content
 
 def htmlOutputDeclarationDatas (buildDir : System.FilePath) (result : AnalyzerResult) : HtmlT IO Unit := do
@@ -143,7 +145,7 @@ def htmlOutputResults (baseConfig : SiteBaseContext) (result : AnalyzerResult) (
       throw <| IO.userError s!"There are errors when generating '{filePath}': {cfg.errors}"
     if let .some d := filePath.parent then
       FS.createDirAll d
-    FS.writeFile filePath moduleHtml.toString
+    FS.writeFile filePath (withDoctype moduleHtml.toString)
 
     let mdRelFilePath := basePathComponent / moduleNameToMarkdownFile modName
     let mdFilePath := baseConfig.buildDir / mdRelFilePath
@@ -237,7 +239,7 @@ def patchNavInAllFiles (config : SiteBaseContext) : IO Unit := do
     }
     let navHtml := ReaderT.run navContent navConfig |>.toString
     let patched := startParts[0]! ++ navHtml ++ endParts[1]!
-    FS.writeFile filePath patched
+    FS.writeFile filePath (withDoctype patched)
 
 def htmlOutputIndex (baseConfig : SiteBaseContext) (staticDir : Option System.FilePath := none)
     (bookDir : Option System.FilePath := none) : IO Unit := do
