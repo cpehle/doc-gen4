@@ -126,7 +126,13 @@ def JsonHeaderIndex.addModule (index : JsonHeaderIndex) (module : JsonModule) : 
   let merge idx decl := { idx with declarations := (decl.info.name, decl) :: idx.declarations }
   module.declarations.foldl merge index
 
-def JsonIndex.addModule (index : JsonIndex) (module : JsonModule) : BaseHtmlM JsonIndex := do
+/--
+Add one module's data to the index. `documented` is the set of modules that have
+their own data file in this build; imports outside it are left out of the index
+(they have no page to link to).
+-/
+def JsonIndex.addModule (index : JsonIndex) (module : JsonModule)
+    (documented : Std.HashSet String := {}) : BaseHtmlM JsonIndex := do
   let mut index := index
   let newDecls := module.declarations.map (fun d => (d.info.name, {
     kind := d.info.kind,
@@ -154,6 +160,8 @@ def JsonIndex.addModule (index : JsonIndex) (module : JsonModule) : BaseHtmlM Js
     index := { index with modules := index.modules.insert module.name indexedModule }
 
   for imp in module.imports do
+    if !documented.isEmpty && !documented.contains imp then
+      continue
     let indexedImp ←
       match index.modules[imp]? with
       | some i => pure i
@@ -195,7 +203,6 @@ def DocInfo.toJson (sourceLinker : Option DeclarationRange → String) (info : P
 def Process.Module.toJson (module : Process.Module) : HtmlM Json := do
     let mut jsonDecls := []
     let mut instances := #[]
-    let result ← getResult
     let sourceLinker := (← read).sourceLinker module.name
     let declInfo := Process.filterDocInfo module.members
     for decl in declInfo do
@@ -210,7 +217,10 @@ def Process.Module.toJson (module : Process.Module) : HtmlM Json := do
       name := module.name.toString,
       declarations := jsonDecls,
       instances,
-      imports := (module.imports.filter fun name => result.moduleInfo.contains name).map Name.toString
+      -- Keep every import: with per-module builds `result` only knows the module
+      -- itself, so filtering here dropped all imports. Imports of modules outside
+      -- the build are filtered when the index is assembled (`JsonIndex.addModule`).
+      imports := module.imports.map Name.toString
     }
     return ToJson.toJson jsonMod
 

@@ -219,7 +219,7 @@ def importsHtml (moduleName : Name) : HtmlM (Array Html) := do
   let imports := (← getImports moduleName).qsort Name.lt
   imports.mapM fun i => do
     let importHtml ←
-      if result.moduleInfo.contains i then
+      if result.moduleInfo.contains i || (← isLinkableModule i) then
         moduleToHtmlLink i
       else
         pure <span>{i.toString}</span>

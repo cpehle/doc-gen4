@@ -113,6 +113,40 @@ def htmlOutputDeclarationDatas (buildDir : System.FilePath) (result : AnalyzerRe
 /-- Custom source linker type: given an optional source URL and module name, returns a function from declaration range to URL -/
 abbrev SourceLinkerFn := Option String → Name → Option DeclarationRange → String
 
+/--
+Imports of the analyzed modules that will have a page in this documentation build
+although they are not part of the current analysis. Lake's `docs` facet runs
+doc-gen4 once per module, so the analysis only contains that module. Its imports
+still get pages when they are
+* modules of the core libraries documented by `coreDocs` (`Init`, `Std`, `Lake`, `Lean`), or
+* workspace modules, i.e. not shipped with the toolchain: the `docs` facet builds the
+  documentation of every imported workspace module before this one.
+Other toolchain modules are not documented and are not linked.
+-/
+def linkableImports (result : AnalyzerResult) : IO (Std.HashSet Name) := do
+  let coreRoots : List Name := [`Init, `Std, `Lake, `Lean]
+  let sysroot ← try some <$> Lean.findSysroot catch _ => pure none
+  let toolchainLib? := sysroot.map fun r => (r / "lib" / "lean").toString
+  let mut linkable : Std.HashSet Name := {}
+  for (_, module) in result.moduleInfo.toArray do
+    for i in module.imports do
+      if result.moduleInfo.contains i || linkable.contains i then
+        continue
+      if coreRoots.contains i.getRoot then
+        linkable := linkable.insert i
+      else
+        let fromToolchain ←
+          match toolchainLib? with
+          | none => pure true
+          | some lib =>
+            try
+              let olean ← Lean.findOLean i
+              pure (olean.toString.startsWith lib)
+            catch _ => pure true
+        unless fromToolchain do
+          linkable := linkable.insert i
+  return linkable
+
 def htmlOutputResults (baseConfig : SiteBaseContext) (result : AnalyzerResult) (sourceUrl? : Option String)
     (sourceLinker? : Option SourceLinkerFn := none)
     (declarationDecorator? : Option DeclarationDecoratorFn := none) : IO (Array System.FilePath) := do
@@ -128,6 +162,7 @@ def htmlOutputResults (baseConfig : SiteBaseContext) (result : AnalyzerResult) (
 
   discard <| htmlOutputDeclarationDatas baseConfig.buildDir result |>.run {} config baseConfig
 
+  let baseConfig := { baseConfig with linkableModules := ← linkableImports result }
   let mut outputs := #[]
   for (modName, module) in result.moduleInfo.toArray do
     let relFilePath := basePathComponent / moduleNameToFile modName
@@ -247,7 +282,7 @@ def htmlOutputIndex (baseConfig : SiteBaseContext) (staticDir : Option System.Fi
   let baseConfig ← htmlOutputBook baseConfig bookDir
   patchNavInAllFiles baseConfig
 
-  let mut index : JsonIndex := {}
+  let mut modules : Array JsonModule := #[]
   for entry in ← System.FilePath.readDir (declarationsBasePath baseConfig.buildDir) do
     if entry.fileName.startsWith "declaration-data-" && entry.fileName.endsWith ".bmp" then
       let fileContent ← FS.readFile entry.path
@@ -259,7 +294,12 @@ def htmlOutputIndex (baseConfig : SiteBaseContext) (staticDir : Option System.Fi
         | .error err =>
           throw <| IO.userError s!"failed to parse file '{entry.path}': {err}"
         | .ok (module : JsonModule) =>
-          index := index.addModule module |>.run baseConfig
+          modules := modules.push module
+  -- Modules documented in this build; `importedBy` only records these.
+  let documented : Std.HashSet String := modules.foldl (fun s m => s.insert m.name) {}
+  let mut index : JsonIndex := {}
+  for module in modules do
+    index := index.addModule module documented |>.run baseConfig
 
   let mut indexedDocs : List (String × JsonIndexedDocumentInfo) := []
   for doc in baseConfig.documents do
