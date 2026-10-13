@@ -113,6 +113,11 @@ structure SiteBaseContext where
   documents : Array DocumentData := #[]
 
   /--
+  Imported modules outside the current analysis that are known to get their own
+  page in this documentation build (see `Output.linkableImports`).
+  -/
+  linkableModules : Std.HashSet Name := {}
+  /--
   Current page path relative to the generated doc root.
   -/
   currentPage : Option String := none
@@ -222,6 +227,8 @@ def getRoot : BaseHtmlM String := do
 
 def getHierarchy : BaseHtmlM Hierarchy := do return (← read).hierarchy
 def getCurrentName : BaseHtmlM (Option Name) := do return (← read).currentName
+/-- Whether `module` gets a page in this build even though it is not part of the current analysis. -/
+def isLinkableModule (module : Name) : BaseHtmlM Bool := do return (← read).linkableModules.contains module
 def getCurrentPage : BaseHtmlM (Option String) := do return (← read).currentPage
 def getPreserveRelativeLinks : BaseHtmlM Bool := do return (← read).preserveRelativeLinks
 def getSourceLinksEnabled : BaseHtmlM Bool := do return (← read).sourceLinksEnabled
