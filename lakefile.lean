@@ -18,7 +18,7 @@ require BibtexQuery from git
   "https://github.com/dupuisf/BibtexQuery" @ "bump_to_v4.29.0-rc1"
 
 require «UnicodeBasic» from git
-  "https://github.com/fgdorais/lean4-unicode-basic" @ "main"
+  "https://github.com/fgdorais/lean4-unicode-basic" @ "9539e34e5cb2d52a6454d9b6218f6b6835cad071"
 
 require Cli from git
   "https://github.com/leanprover/lean4-cli" @ "main"
