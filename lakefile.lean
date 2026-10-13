@@ -380,9 +380,13 @@ library_facet docs (lib) : Array FilePath := do
           let existingStaticFiles ← staticFiles.filterM (·.pathExists)
           let traces ← (existingStaticFiles ++ bookSourceFiles).mapM computeTrace
           addTrace <| mixTraceArray traces
-          let generatedFiles ← collectFilesRec basePath
+          -- Lake's `.hash`/`.trace` files are build metadata, not documentation.
+          let generatedFiles := (← collectFilesRec basePath).filter fun f =>
+            f.extension != some "hash" && f.extension != some "trace"
           let direct := generatedFiles.push dataFile
-          return (DepSet.mk direct (modDeps.push (.mk coreDeps #[]))).toArray
+          -- `generatedFiles` already contains the module and core pages, so deduplicate.
+          let files := (DepSet.mk direct (modDeps.push (.mk coreDeps #[]))).toArray
+          return (OrdHashSet.mkEmpty files.size |>.appendArray files).toArray
 
 library_facet docsHeader (lib) : FilePath := do
   let mods ← (← lib.modules.fetch).await
